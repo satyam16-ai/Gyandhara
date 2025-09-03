@@ -19,6 +19,7 @@ const adminRoutes = require('./routes/admin-simple')
 const authRoutes = require('./routes/auth')
 const roomRoutes = require('./routes/rooms')
 const roomClassRoutes = require('./routes/room-classes')
+const studentRoutes = require('./routes/student')
 
 const app = express()
 const server = http.createServer(app)
@@ -67,6 +68,9 @@ app.use('/api/rooms', roomRoutes)
 
 // Mount room-classes routes
 app.use('/api/room-classes', roomClassRoutes)
+
+// Mount student routes
+app.use('/api/student', studentRoutes)
 
 // In-memory storage for active sessions and users
 const activeSessions = new Map()

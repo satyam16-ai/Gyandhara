@@ -81,8 +81,9 @@ const TeacherDashboardContent: React.FC<TeacherDashboardProps> = ({
   const handleStopClass = async () => {
     try {
       const currentClassId = localStorage.getItem('currentClassId')
+      const userId = localStorage.getItem('userId')
       
-      if (currentClassId) {
+      if (currentClassId && userId) {
         console.log('🛑 Stopping class:', currentClassId)
         
         // Call the API to end the class
@@ -91,6 +92,7 @@ const TeacherDashboardContent: React.FC<TeacherDashboardProps> = ({
           headers: {
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({ userId }),
         })
         
         if (response.ok) {
@@ -117,10 +119,10 @@ const TeacherDashboardContent: React.FC<TeacherDashboardProps> = ({
           // Update local state
           setIsTeaching(false)
           
-          alert('Class ended successfully!')
-          
-          // Optionally redirect to dashboard or rooms
-          // window.location.href = '/teacher-dashboard'
+          // Redirect to teacher dashboard after successful class end
+          setTimeout(() => {
+            window.location.href = '/teacher-dashboard'
+          }, 1000)
         } else {
           const errorData = await response.json()
           console.error('❌ Failed to end class:', errorData)
@@ -176,49 +178,31 @@ const TeacherDashboardContent: React.FC<TeacherDashboardProps> = ({
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b px-6 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Teacher Dashboard</h1>
-          <p className="text-gray-600">Gyaandhara - Real-time Interactive Whiteboard</p>
-          <div className="flex items-center space-x-4 mt-1">
-            {roomId && (
-              <p className="text-sm text-blue-600">Room: {roomId}</p>
-            )}
-            {isConnected && (
-              <span className="flex items-center text-green-600 text-sm">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                Whiteboard Live
-              </span>
-            )}
-          </div>
-        </div>
-          
-        <div className="flex items-center space-x-4">
-          <BandwidthMonitor settings={bandwidthSettings} />
-          
-          {!isTeaching ? (
-            <button
-              onClick={handleStartClass}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-            >
-              🎓 Start Teaching
-            </button>
-          ) : (
-            <button
-              onClick={() => setShowEndClassConfirm(true)}
-              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-            >
-              ⏹️ End Class
-            </button>
-          )}
-        </div>
-      </div>
-
         {/* Main Content */}
         <div className="flex-1 flex">
           {/* Left Panel - Whiteboard */}
           <div className="flex-1 p-4">
+            {/* Start/Stop controls overlay */}
+            <div className="absolute top-4 right-4 z-10 flex items-center space-x-4">
+              <BandwidthMonitor settings={bandwidthSettings} />
+              
+              {!isTeaching ? (
+                <button
+                  onClick={handleStartClass}
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg"
+                >
+                  🎓 Start Teaching
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowEndClassConfirm(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg"
+                >
+                  ⏹️ End Class
+                </button>
+              )}
+            </div>
+            
             <div className="bg-white rounded-lg shadow-sm h-full" data-whiteboard>
               <WhiteBoard
                 isTeacher={true}

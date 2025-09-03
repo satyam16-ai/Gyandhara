@@ -278,6 +278,8 @@ router.post('/:classId/join', async (req, res) => {
     if (existingAttendee) {
       // Update join time for re-joining (user can rejoin to update their presence)
       existingAttendee.joinedAt = new Date()
+      
+      // If user is rejoining, don't clear leftAt time as we want to track total time
       await roomClass.save()
       
       // Ensure SessionParticipant record exists for whiteboard access
@@ -301,10 +303,11 @@ router.post('/:classId/join', async (req, res) => {
       })
     }
 
-    // Add user to attendees
+    // Add user to attendees with initial join time
     roomClass.attendees.push({
       userId,
-      joinedAt: new Date()
+      joinedAt: new Date(),
+      attendancePercentage: 0 // Will be calculated when user leaves or class ends
     })
 
     // Update stats
@@ -335,6 +338,80 @@ router.post('/:classId/join', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to join class'
+    })
+  }
+})
+
+// Leave a class (student leaves)
+router.post('/:classId/leave', async (req, res) => {
+  try {
+    const { classId } = req.params
+    const { userId } = req.body
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User ID is required'
+      })
+    }
+
+    const roomClass = await RoomClass.findById(classId)
+    if (!roomClass) {
+      return res.status(404).json({
+        success: false,
+        error: 'Class not found'
+      })
+    }
+
+    // Find the attendee
+    const attendeeIndex = roomClass.attendees.findIndex(
+      attendee => attendee.userId.toString() === userId
+    )
+
+    if (attendeeIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: 'Student not found in class attendees'
+      })
+    }
+
+    // Update leave time and calculate attendance
+    const attendee = roomClass.attendees[attendeeIndex]
+    attendee.leftAt = new Date()
+
+    // Calculate time spent and attendance percentage
+    if (attendee.joinedAt) {
+      const timeSpentMs = attendee.leftAt - new Date(attendee.joinedAt)
+      const timeSpentMinutes = timeSpentMs / (1000 * 60)
+      const classDuration = roomClass.duration || 60 // default 60 minutes
+      
+      attendee.attendancePercentage = Math.min(100, Math.round((timeSpentMinutes / classDuration) * 100))
+    }
+
+    // Update SessionParticipant to inactive
+    if (roomClass.sessionId) {
+      await SessionParticipant.findOneAndUpdate(
+        { sessionId: roomClass.sessionId, userId: userId },
+        {
+          isActive: false,
+          leftAt: new Date()
+        }
+      )
+    }
+
+    await roomClass.save()
+
+    res.json({
+      success: true,
+      message: 'Successfully left class',
+      attendancePercentage: attendee.attendancePercentage
+    })
+
+  } catch (error) {
+    console.error('Error leaving class:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to leave class'
     })
   }
 })
@@ -400,6 +477,100 @@ router.get('/teacher/:teacherId/upcoming', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch upcoming classes'
+    })
+  }
+})
+
+//End a class (teacher ends the class)
+router.post('/:classId/end', async (req, res) => {
+  try {
+    const { classId } = req.params
+    const { userId } = req.body
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User ID is required'
+      })
+    }
+
+    const roomClass = await RoomClass.findById(classId)
+    if (!roomClass) {
+      return res.status(404).json({
+        success: false,
+        error: 'Class not found'
+      })
+    }
+
+    // Check if user is the teacher
+    if (roomClass.teacherId.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Only the teacher can end the class'
+      })
+    }
+
+    // Update class status and end time
+    roomClass.status = 'ended'
+    roomClass.endTime = new Date()
+
+    // Calculate final attendance for all attendees
+    const actualDuration = roomClass.endTime - new Date(roomClass.startTime)
+    const actualDurationMinutes = actualDuration / (1000 * 60)
+
+    roomClass.attendees.forEach(attendee => {
+      if (attendee.joinedAt) {
+        const leaveTime = attendee.leftAt || roomClass.endTime
+        const timeSpentMs = leaveTime - new Date(attendee.joinedAt)
+        const timeSpentMinutes = timeSpentMs / (1000 * 60)
+        
+        // Student is present if they spent more than 50% of the actual class time
+        attendee.attendancePercentage = Math.min(100, Math.round((timeSpentMinutes / actualDurationMinutes) * 100))
+        attendee.isPresent = attendee.attendancePercentage >= 50
+        
+        if (!attendee.leftAt) {
+          attendee.leftAt = roomClass.endTime
+        }
+      }
+    })
+
+    // Update all SessionParticipants to inactive
+    if (roomClass.sessionId) {
+      await SessionParticipant.updateMany(
+        { sessionId: roomClass.sessionId },
+        {
+          isActive: false,
+          leftAt: roomClass.endTime
+        }
+      )
+    }
+
+    await roomClass.save()
+
+    // Broadcast class ended event to all connected clients
+    if (req.app.get('io')) {
+      req.app.get('io').emit('class-ended', {
+        classId: classId,
+        roomId: roomClass.roomId,
+        message: 'Class has been ended by the teacher'
+      })
+    }
+
+    res.json({
+      success: true,
+      message: 'Class ended successfully',
+      finalAttendance: roomClass.attendees.map(a => ({
+        userId: a.userId,
+        attendancePercentage: a.attendancePercentage,
+        isPresent: a.isPresent
+      }))
+    })
+
+  } catch (error) {
+    console.error('Error ending class:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to end class'
     })
   }
 })

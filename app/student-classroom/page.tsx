@@ -84,11 +84,37 @@ export default function StudentClassroomPage() {
     setLoading(false)
   }, [router])
 
-  const handleLeaveClass = () => {
-    localStorage.removeItem('currentRoomId')
-    localStorage.removeItem('currentClassId')
-    localStorage.removeItem('currentClassData')
-    router.push('/student-dashboard')
+  const handleLeaveClass = async () => {
+    try {
+      const userId = localStorage.getItem('userId')
+      const classId = localStorage.getItem('currentClassId')
+      
+      if (userId && classId) {
+        // Call the leave API to track attendance
+        const leaveResponse = await fetch(`/api/room-classes/${classId}/leave`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId }),
+        })
+
+        if (leaveResponse.ok) {
+          const result = await leaveResponse.json()
+          console.log('Class left successfully, attendance:', result.attendancePercentage + '%')
+        } else {
+          console.error('Failed to record class leave')
+        }
+      }
+    } catch (error) {
+      console.error('Error leaving class:', error)
+    } finally {
+      // Clean up localStorage and redirect regardless of API call result
+      localStorage.removeItem('currentRoomId')
+      localStorage.removeItem('currentClassId')
+      localStorage.removeItem('currentClassData')
+      router.push('/student-dashboard')
+    }
   }
 
   if (loading) {

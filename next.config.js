@@ -5,9 +5,7 @@ const nextConfig = {
     domains: ['localhost'],
     unoptimized: true
   },
-  experimental: {
-    suppressHydrationWarning: true
-  },
+
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {

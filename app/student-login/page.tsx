@@ -30,7 +30,7 @@ export default function StudentLoginPage() {
     if (token && userRole) {
       // Only redirect if user is actually a student
       if (userRole === 'student') {
-        router.push('/rooms')
+        router.push('/student-dashboard')
       } else {
         // Clear invalid token for wrong role
         localStorage.removeItem('userToken')
@@ -72,7 +72,7 @@ export default function StudentLoginPage() {
         localStorage.setItem('userId', data.user._id)
         localStorage.setItem('userName', data.user.name)
         
-        router.push('/rooms')
+        router.push('/student-dashboard')
       } else {
         setError(data.message || data.error || 'Invalid student credentials')
       }
@@ -118,7 +118,7 @@ export default function StudentLoginPage() {
         localStorage.setItem('userId', data.user._id)
         localStorage.setItem('userName', data.user.name)
         
-        router.push('/rooms')
+        router.push('/student-dashboard')
       } else {
         setError(data.error || 'Registration failed')
       }

@@ -540,7 +540,7 @@ router.get('/student/available', async (req, res) => {
     .limit(50)
 
     // Format the response to match the expected structure
-    const formattedRooms = availableRooms.map(room => ({
+    const formattedRooms = availableRooms.filter(room => room.teacherId).map(room => ({
       id: room._id,
       roomId: room.roomId,
       className: room.className,
