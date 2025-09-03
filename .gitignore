@@ -15,14 +15,171 @@ build/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*.local
+.env.*.backup
+.env.backup
+.env.save
 
-# IDE
+# API Keys and Secrets
+*.key
+*.pem
+*.crt
+*.cer
+*.p12
+*.pfx
+*.jks
+secrets.json
+config/secrets.json
+config/keys.json
+keys.json
+secrets/
+keys/
+credentials/
+auth/
+.env.secrets
+.env.keys
+.env.credentials
+.env.auth
+
+# Twilio Credentials
+.twilio-cli
+.twilio
+twilio.json
+twilio-credentials.json
+
+# AWS Credentials
+.aws/
+credentials
+config
+.aws-credentials
+aws-credentials.json
+
+# Google Service Account Keys
+*.json
+service-account-key.json
+google-credentials.json
+firebase-key.json
+
+# Database Credentials
+db-credentials.json
+database-credentials.json
+mongo-credentials.json
+
+# JWT and Auth Tokens
+jwt.key
+jwt.pem
+auth.key
+token.key
+private.key
+public.key
+
+# SSH Keys
+id_rsa
+id_rsa.pub
+id_dsa
+id_dsa.pub
+id_ecdsa
+id_ecdsa.pub
+id_ed25519
+id_ed25519.pub
+ssh-key
+ssh-key.pub
+
+# GPG Keys
+*.gpg
+*.pgp
+gpg-key
+pgp-key
+
+# API Keys in various formats
+api-keys.json
+api-keys.txt
+api-keys.env
+keys.txt
+secrets.txt
+credentials.txt
+auth.txt
+
+# Platform-specific secrets
+discord-token
+slack-token
+telegram-token
+github-token
+gitlab-token
+bitbucket-token
+
+# Encryption keys
+encryption.key
+decryption.key
+cipher.key
+crypto.key
+
+# Password files
+passwords.txt
+passwords.json
+pass.txt
+pwd.txt
+
+# Configuration with secrets
+config.local.json
+config.production.json
+config.staging.json
+settings.local.json
+settings.production.json
+
+# Twilio Credentials
+.twilio-cli
+.twilio
+
+# Database
+*.sqlite
+*.db
+*.sqlite3
+voiceboard.db
+mongodb.db
+data/
+*.mongod
+
+# Logs and Debug
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime and Coverage
+lib-cov/
+coverage/
+.nyc_output/
+.grunt/
+.lock-wscript/
+coverage.lcov
+
+# Build outputs and Cache
+.next/
+out/
+build/
+dist/
+.cache/
+*.tsbuildinfo
+*.tsbuildinfo.backup
+.parcel-cache/
+
+# IDE and Editor
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
 
-# OS
+# OS Generated
 .DS_Store
 .DS_Store?
 ._*
@@ -30,46 +187,42 @@ build/
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
 
-# Logs
-logs/
-*.log
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# Runtime
-lib-cov/
-coverage/
-.nyc_output/
-.grunt/
-.lock-wscript/
-
-# Database
-*.sqlite
-*.db
-voiceboard.db
-
-# Backup files
+# Temporary and Backup
+temp/
+tmp/
 *.backup
 *.bak
 *.old
 *.tmp
+*.temp
+*~
 
-# Test files
+# Test and Development
 test-*.js
 *test.js
 *.test.js
+.coverage/
+.nyc_output/
+coverage.json
 
-# Temporary files
-temp/
-tmp/
+# Package Manager
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.yarn-integrity
 
-# Build outputs
-dist/
-build/
+# Docker
+.dockerignore
+docker-compose.override.yml
 
-# Cache
+# Miscellaneous
+*.tgz
+*.tar.gz
 .cache/
-*.tsbuildinfo
+.eslintcache
+.stylelintcache
