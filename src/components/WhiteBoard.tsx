@@ -1,9 +1,10 @@
 'use client'
 
+import React from 'react'
 import { useRef, useEffect, useState, useCallback } from 'react'
 import rough from 'roughjs'
-import { useWhiteboard } from '@/contexts/WhiteboardContext'
-import { CompressedDrawingData } from '@/utils/compression'
+import { useWhiteboard } from '../contexts/WhiteboardContext'
+import { CompressedDrawingData } from '../utils/compression'
 import { 
   PenTool, 
   Square, 

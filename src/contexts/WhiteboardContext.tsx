@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react'
 import { io, Socket } from 'socket.io-client'
-import { DrawingElement } from '@/types'
+import { DrawingElement } from '../types'
 import { 
   NETWORK_CONFIG,
   compressDrawingData, 
@@ -10,7 +10,7 @@ import {
   CompressedDrawingData,
   teacherCompressor,
   studentDecompressor
-} from '@/utils/compression'
+} from '../utils/compression'
 
 interface WhiteboardContextType {
   socket: Socket | null

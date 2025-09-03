@@ -1,5 +1,12 @@
 // Core Components
-export { default as WhiteBoard } from './WhiteBoard'
+import React from 'react'
+
+// Fallback stub for WhiteBoard to avoid "Cannot find module './WhiteBoard'"
+// Replace this stub with a proper re-export when ./WhiteBoard is added.
+export const WhiteBoard: React.FC = () => {
+  return null
+}
+
 export { default as ChatPanel } from './ChatPanel'
 export { default as AudioControls } from './AudioControls'
 export { default as AudioPlayer } from './AudioPlayer'
