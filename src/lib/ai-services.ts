@@ -1,4 +1,4 @@
-// AI/ML Services for VoiceBoard
+// AI/ML Services for Gyaandhara
 
 // Speech-to-Text Service
 export class SpeechToTextService {

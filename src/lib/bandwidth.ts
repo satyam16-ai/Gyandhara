@@ -1,4 +1,4 @@
-// Bandwidth management utilities for VoiceBoard
+// Bandwidth management utilities for Gyaandhara
 
 export type BandwidthMode = 'ultra-low' | 'low' | 'normal'
 

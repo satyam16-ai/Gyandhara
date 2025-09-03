@@ -1,6 +1,6 @@
-# Contributing to VoiceBoard Educational Platform
+# Contributing to Gyaandhara Educational Platform
 
-Thank you for your interest in contributing to VoiceBoard! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to Gyaandhara! This document provides guidelines for contributing to the project.
 
 ## 📋 Table of Contents
 
@@ -27,8 +27,8 @@ We are committed to providing a welcoming and inspiring community for all. Pleas
 
 1. **Fork and Clone**
    ```bash
-   git clone https://github.com/yourusername/voiceboard-educational-platform.git
-   cd voiceboard-educational-platform
+   git clone https://github.com/yourusername/gyaandhara-educational-platform.git
+   cd gyaandhara-educational-platform
    ```
 
 2. **Install Dependencies**
@@ -208,4 +208,4 @@ Use the feature request template and include:
 - **Issues**: Report bugs and request features
 - **Pull Requests**: Contribute code improvements
 
-Thank you for contributing to VoiceBoard! 🚀
+Thank you for contributing to Gyaandhara! 🚀

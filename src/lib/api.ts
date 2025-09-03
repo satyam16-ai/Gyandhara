@@ -1,9 +1,9 @@
-// API service for VoiceBoard with MongoDB backend
+// API service for Gyaandhara with MongoDB backend
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
 // API utility functions
-class VoiceBoardAPI {
+class GyaandharaAPI {
   // Health check
   static async healthCheck() {
     const response = await fetch(`${API_BASE}/api/health`)
@@ -64,4 +64,4 @@ class VoiceBoardAPI {
   }
 }
 
-export default VoiceBoardAPI
+export default GyaandharaAPI

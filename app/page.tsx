@@ -10,8 +10,10 @@ export default function Home() {
 
   // Handle navigation in useEffect to avoid render-time side effects
   useEffect(() => {
-    if (selectedRole) {
-      router.push('/login')
+    if (selectedRole === 'teacher') {
+      router.push('/teacher-login')
+    } else if (selectedRole === 'student') {
+      router.push('/student-login')
     }
   }, [selectedRole, router])
 

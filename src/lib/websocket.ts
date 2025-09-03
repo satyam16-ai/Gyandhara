@@ -194,7 +194,7 @@ class WebSocketService {
     if (!this.socket) return
 
     this.socket.on('connect', () => {
-      console.log('✅ Connected to VoiceBoard server')
+      console.log('✅ Connected to Gyaandhara server')
       this.reconnectAttempts = 0
     })
 

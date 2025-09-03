@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client'
 import { StrokeData, AudioChunk, ChatMessage } from '@/types'
 
-class VoiceBoardSocket {
+class GyaandharaSocket {
   private socket: Socket | null = null
   private serverUrl: string
   
@@ -31,11 +31,11 @@ class VoiceBoardSocket {
     if (!this.socket) return
 
     this.socket.on('connect', () => {
-      console.log('Connected to VoiceBoard server')
+      console.log('Connected to Gyaandhara server')
     })
 
     this.socket.on('disconnect', () => {
-      console.log('Disconnected from VoiceBoard server')
+      console.log('Disconnected from Gyaandhara server')
     })
 
     this.socket.on('connect_error', (error) => {
@@ -147,6 +147,6 @@ class VoiceBoardSocket {
 }
 
 // Create singleton instance
-const voiceBoardSocket = new VoiceBoardSocket()
+const gyaandharaSocket = new GyaandharaSocket()
 
-export default voiceBoardSocket
+export default gyaandharaSocket

@@ -89,7 +89,7 @@ export default function TeacherDashboardPage() {
       <div className="bg-white shadow-sm border-b px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Welcome, {user.name}!</h1>
-          <p className="text-gray-600">Teacher Dashboard - VoiceBoard Platform</p>
+          <p className="text-gray-600">Teacher Dashboard - Gyaandhara Platform</p>
           {roomId && (
             <p className="text-sm text-blue-600 mt-1">Room ID: {roomId}</p>
           )}

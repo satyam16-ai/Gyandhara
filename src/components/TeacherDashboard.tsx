@@ -180,7 +180,7 @@ const TeacherDashboardContent: React.FC<TeacherDashboardProps> = ({
       <div className="bg-white shadow-sm border-b px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Teacher Dashboard</h1>
-          <p className="text-gray-600">VoiceBoard - Real-time Interactive Whiteboard</p>
+          <p className="text-gray-600">Gyaandhara - Real-time Interactive Whiteboard</p>
           <div className="flex items-center space-x-4 mt-1">
             {roomId && (
               <p className="text-sm text-blue-600">Room: {roomId}</p>

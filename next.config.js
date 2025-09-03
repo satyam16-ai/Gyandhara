@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['mongoose', 'bcryptjs']
-  },
+  serverExternalPackages: ['mongoose', 'bcryptjs'],
   images: {
     domains: ['localhost'],
     unoptimized: true
+  },
+  experimental: {
+    suppressHydrationWarning: true
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -19,13 +20,13 @@ const nextConfig = {
         buffer: require.resolve('buffer')
       }
     }
-    
+
     // Handle node-opus for client-side builds
     config.externals = config.externals || []
     if (!isServer) {
       config.externals.push('node-opus')
     }
-    
+
     return config
   },
   env: {

@@ -63,7 +63,7 @@ export default function RoomsPage() {
             <div className="text-2xl">🏫</div>
           </div>
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-700 font-medium">Loading VoiceBoard...</p>
+          <p className="text-gray-700 font-medium">Loading Gyaandhara...</p>
         </div>
       </div>
     )
@@ -87,7 +87,7 @@ export default function RoomsPage() {
               Access Required
             </h2>
             <p className="text-gray-600 text-sm leading-relaxed mb-8">
-              Please log in to access the VoiceBoard room system
+              Please log in to access the Gyaandhara room system
             </p>
             
             <button
@@ -115,7 +115,7 @@ export default function RoomsPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              VoiceBoard Rooms
+              Gyaandhara Rooms
             </h1>
             <p className="text-gray-600 text-sm">
               Welcome back, <span className="font-semibold">{userName}</span> 
@@ -154,7 +154,7 @@ export default function RoomsPage() {
       {/* Footer */}
       <div className="bg-white/50 backdrop-blur-lg border-t border-white/20 px-6 py-4 text-center text-gray-600 text-sm">
         <p>
-          🎨 VoiceBoard - AI-Powered Educational Platform • 
+          🎨 Gyaandhara - AI-Powered Educational Platform • 
           <span className="ml-1 font-semibold">
             {userRole === 'teacher' ? 'Manage your virtual classrooms' : 'Join interactive classes'}
           </span>
