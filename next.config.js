@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['mongoose', 'bcryptjs']
-  },
+  serverExternalPackages: ['mongoose', 'bcryptjs', 'nodemailer', 'twilio'],
   images: {
     domains: ['localhost'],
     unoptimized: true
@@ -14,16 +12,19 @@ const nextConfig = {
         fs: false,
         net: false,
         tls: false,
-        crypto: require.resolve('crypto-browserify'),
-        stream: require.resolve('stream-browserify'),
-        buffer: require.resolve('buffer')
+        crypto: false,
+        stream: false,
+        buffer: false,
+        util: false,
+        os: false,
+        path: false
       }
     }
     
-    // Handle node-opus for client-side builds
+    // Handle node-specific modules for client-side builds
     config.externals = config.externals || []
     if (!isServer) {
-      config.externals.push('node-opus')
+      config.externals.push('node-opus', 'bcryptjs', 'mongoose', 'nodemailer', 'twilio')
     }
     
     return config

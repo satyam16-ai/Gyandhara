@@ -10,7 +10,7 @@ import {
   CompressedDrawingData,
   teacherCompressor,
   studentDecompressor
-} from '@/utils/compression-fixed'
+} from '@/utils/compression'
 
 interface WhiteboardContextType {
   socket: Socket | null

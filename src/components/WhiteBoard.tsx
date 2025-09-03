@@ -1393,12 +1393,12 @@ const WhiteBoard: React.FC<WhiteBoardProps> = ({
                 <h4 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Network Mode</h4>
                 <div className="flex justify-center">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    bandwidthMode === 'ultra-low' ? 'bg-orange-100 text-orange-600' :
-                    bandwidthMode === 'low' ? 'bg-yellow-100 text-yellow-600' : 
+                    (bandwidthMode as string) === 'ultra-low' ? 'bg-orange-100 text-orange-600' :
+                    (bandwidthMode as string) === 'low' ? 'bg-yellow-100 text-yellow-600' : 
                     'bg-green-100 text-green-600'
                   }`}>
-                    {bandwidthMode === 'ultra-low' ? '🐌 Ultra-Low Bandwidth' :
-                     bandwidthMode === 'low' ? '⚡ Low Bandwidth' : 
+                    {(bandwidthMode as string) === 'ultra-low' ? '🐌 Ultra-Low Bandwidth' :
+                     (bandwidthMode as string) === 'low' ? '⚡ Low Bandwidth' : 
                      '🚀 Normal Mode'}
                   </span>
                 </div>

@@ -1,15 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-interface UserLoginProps {
-  role?: 'teacher' | 'student'
-  onBack?: () => void
-}
-
-export default function UserLogin({ role, onBack }: UserLoginProps) {
+function UserLoginForm() {
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -26,6 +21,8 @@ export default function UserLogin({ role, onBack }: UserLoginProps) {
     confirmPassword: ''
   })
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const role = (searchParams?.get('role') as 'teacher' | 'student') || 'student'
 
   useEffect(() => {
     // Check for existing user token
@@ -330,16 +327,14 @@ export default function UserLogin({ role, onBack }: UserLoginProps) {
           </div>
 
           {/* Back to Role Selection */}
-          {onBack && (
-            <div className="text-center pt-4 border-t border-gray-200/50">
-              <button
-                onClick={onBack}
-                className="text-sm text-gray-600 hover:text-gray-800 transition-colors font-medium"
-              >
-                ← Back to role selection
-              </button>
-            </div>
-          )}
+          <div className="text-center pt-4 border-t border-gray-200/50">
+            <Link
+              href="/"
+              className="text-sm text-gray-600 hover:text-gray-800 transition-colors font-medium"
+            >
+              ← Back to role selection
+            </Link>
+          </div>
 
           {/* Admin Portal Link */}
           <div className="text-center text-xs text-gray-500">
@@ -354,5 +349,22 @@ export default function UserLogin({ role, onBack }: UserLoginProps) {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function UserLoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-8 bg-white/80 backdrop-blur-lg p-8 rounded-3xl shadow-2xl border border-white/20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <UserLoginForm />
+    </Suspense>
   )
 }
