@@ -1,12 +1,12 @@
 {
-  "name": "gyaandhara-educational-platform",
+  "name": "voiceboard-educational-platform",
   "version": "2.0.0",
-  "description": "Gyaandhara: AI-powered low-bandwidth educational platform with real-time whiteboard, voice communication, and collaborative learning features",
+  "description": "AI-powered low-bandwidth educational platform with real-time whiteboard, voice communication, and collaborative learning features",
   "private": true,
-  "homepage": "https://github.com/yourusername/gyaandhara-educational-platform",
+  "homepage": "https://github.com/yourusername/voiceboard-educational-platform",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/gyaandhara-educational-platform.git"
+    "url": "https://github.com/yourusername/voiceboard-educational-platform.git"
   },
   "keywords": [
     "education",
@@ -21,8 +21,8 @@
     "socketio"
   ],
   "author": {
-    "name": "Gyaandhara Team",
-    "email": "support@gyaandhara.com"
+    "name": "VoiceBoard Team",
+    "email": "support@voiceboard.com"
   },
   "license": "MIT",
   "engines": {
@@ -60,8 +60,6 @@
     "axios": "^1.6.2",
     "bcryptjs": "^3.0.2",
     "buffer": "^6.0.3",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
     "cors": "^2.8.5",
     "crypto-browserify": "^3.12.1",
     "crypto-js": "^4.2.0",
@@ -76,7 +74,6 @@
     "lucide-react": "^0.542.0",
     "mongodb": "^6.19.0",
     "mongoose": "^8.18.0",
-    "motion": "^12.23.12",
     "msgpack5": "^6.0.2",
     "multer": "^1.4.5-lts.1",
     "next": "15.0.4",
@@ -90,7 +87,6 @@
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.7.5",
     "stream-browserify": "^3.0.0",
-    "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "twilio": "^5.8.2",
     "ws": "^8.16.0"
@@ -106,6 +102,7 @@
     "concurrently": "^8.2.2",
     "eslint": "^8",
     "eslint-config-next": "15.0.4",
+    "newman": "^6.2.1",
     "postcss": "^8",
     "tailwindcss": "^3.3.0",
     "typescript": "^5"

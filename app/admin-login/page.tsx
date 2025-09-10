@@ -145,7 +145,7 @@ export default function AdminLogin() {
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
                   Admin Portal
                 </h1>
-                <p className="text-sm text-gray-600">Secure access to Gyaandhara dashboard</p>
+                <p className="text-sm text-gray-600">Secure access to VoiceBoard dashboard</p>
               </div>
             </div>
 
@@ -167,7 +167,7 @@ export default function AdminLogin() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full rounded-lg px-4 py-3 border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all duration-200 hover:border-gray-400"
-                  placeholder="admin or admin@gyaandhara.com"
+                  placeholder="admin or admin@voiceboard.com"
                   aria-label="Username or email"
                   autoComplete="username"
                 />

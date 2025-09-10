@@ -177,14 +177,21 @@ router.post('/login',
       // Find user
       const user = await User.findOne({
         username: username.toLowerCase(),
-        role: role,
         isActive: true
       })
 
       if (!user) {
         return res.status(401).json({
           error: 'Invalid credentials',
-          message: 'Username, password, or role is incorrect'
+          message: 'Username or password is incorrect'
+        })
+      }
+
+      // Check if user role matches the expected role
+      if (user.role !== role) {
+        return res.status(403).json({
+          error: 'Role mismatch',
+          message: `This account is registered as a ${user.role}. Please use the ${user.role} login page.`
         })
       }
 
@@ -194,7 +201,7 @@ router.post('/login',
       if (!isValidPassword) {
         return res.status(401).json({
           error: 'Invalid credentials',
-          message: 'Username, password, or role is incorrect'
+          message: 'Username or password is incorrect'
         })
       }
 

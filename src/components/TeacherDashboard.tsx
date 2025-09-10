@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import WhiteBoard from '@/components/WhiteBoard'
-import AudioControls from '@/components/AudioControls'
+import WhiteBoard from '@/components/WhiteBoardNew'
 import StudentList from '@/components/StudentList'
 import BandwidthMonitor from '@/components/BandwidthMonitor'
 import { WhiteboardProvider, useWhiteboard } from '../contexts/WhiteboardContext'
@@ -178,14 +177,54 @@ const TeacherDashboardContent: React.FC<TeacherDashboardProps> = ({
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
+      {/* Navigation Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => {
+                // End class and return to dashboard
+                if (isTeaching) {
+                  handleStopClass()
+                } else {
+                  // Clear current class and return to dashboard
+                  localStorage.removeItem('currentClassId')
+                  localStorage.removeItem('currentTeachingClass')
+                  localStorage.removeItem('currentRoomId')
+                  window.location.href = '/teacher-dashboard'
+                }
+              }}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="font-medium">Back to Dashboard</span>
+            </button>
+            <div className="h-6 w-px bg-gray-300"></div>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">Teaching Whiteboard</h1>
+              <p className="text-sm text-gray-600">
+                Room: {roomId?.slice(-8)} | {isTeaching ? '🟢 Live' : '🔴 Offline'}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-gray-600">
+              {students.length} student{students.length !== 1 ? 's' : ''} connected
+            </div>
+            <BandwidthMonitor settings={bandwidthSettings} />
+          </div>
+        </div>
+      </header>
+
         {/* Main Content */}
         <div className="flex-1 flex">
           {/* Left Panel - Whiteboard */}
           <div className="flex-1 p-4">
             {/* Start/Stop controls overlay */}
-            <div className="absolute top-4 right-4 z-10 flex items-center space-x-4">
-              <BandwidthMonitor settings={bandwidthSettings} />
-              
+            <div className="absolute top-20 right-4 z-10 flex items-center space-x-4">
               {!isTeaching ? (
                 <button
                   onClick={handleStartClass}
@@ -209,6 +248,9 @@ const TeacherDashboardContent: React.FC<TeacherDashboardProps> = ({
                 bandwidthMode={bandwidthSettings.mode}
                 roomId={roomId}
                 classId={classId}
+                teacherName={localStorage.getItem('userName') || 'Teacher'}
+                lectureTitle="Live Class"
+                subject="Mathematics"
               />
             </div>
           </div>
@@ -242,10 +284,7 @@ const TeacherDashboardContent: React.FC<TeacherDashboardProps> = ({
             {/* Audio Controls */}
             <div className="bg-white rounded-lg shadow-sm p-4">
               <h3 className="font-semibold text-gray-800 mb-3">Voice Controls</h3>
-              <AudioControls
-                isTeaching={isTeaching}
-                bandwidthMode={bandwidthSettings.mode}
-              />
+              
             </div>
 
             {/* Bandwidth Settings */}

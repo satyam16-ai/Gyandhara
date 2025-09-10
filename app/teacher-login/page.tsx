@@ -30,7 +30,7 @@ export default function TeacherLoginPage() {
     if (token && userRole) {
       // Only redirect if user is actually a teacher
       if (userRole === 'teacher') {
-        router.push('/rooms')
+        router.push('/teacher-dashboard')
       } else {
         // Clear invalid token for wrong role
         localStorage.removeItem('userToken')
@@ -72,7 +72,7 @@ export default function TeacherLoginPage() {
         localStorage.setItem('userId', data.user._id)
         localStorage.setItem('userName', data.user.name)
         
-        router.push('/rooms')
+        router.push('/teacher-dashboard')
       } else {
         setError(data.message || data.error || 'Invalid teacher credentials')
       }
@@ -118,7 +118,7 @@ export default function TeacherLoginPage() {
         localStorage.setItem('userId', data.user._id)
         localStorage.setItem('userName', data.user.name)
         
-        router.push('/rooms')
+        router.push('/teacher-dashboard')
       } else {
         setError(data.error || 'Registration failed')
       }

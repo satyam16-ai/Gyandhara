@@ -9,7 +9,17 @@ export async function POST(
 ) {
   try {
     const { classId } = await params
-    const body = await request.json()
+    
+    // Try to parse JSON body, but handle empty body gracefully
+    let body = {}
+    try {
+      const text = await request.text()
+      if (text && text.trim() !== '') {
+        body = JSON.parse(text)
+      }
+    } catch (parseError) {
+      console.log('No JSON body provided, using empty object')
+    }
 
     const response = await fetch(`${BACKEND_URL}/api/room-classes/${classId}/start`, {
       method: 'POST',

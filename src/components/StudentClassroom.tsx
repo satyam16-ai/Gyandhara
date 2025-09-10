@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Users, Clock, LogOut, Mic, MicOff, Hand, MessageSquare, ChevronRight, ChevronLeft } from 'lucide-react'
-import WhiteBoard from './WhiteBoard'
-import AudioControls from './AudioControls'
-import ChatPanel from './ChatPanel'
+import FullWhiteBoard from './FullWhiteBoard'
+import RealtimeChat from './RealtimeChat'
 import StudentList from './StudentList'
 import BandwidthMonitor from './BandwidthMonitor'
 import { WhiteboardProvider, useWhiteboard } from '../contexts/WhiteboardContext'
@@ -157,11 +156,16 @@ function StudentClassroomContent({ user, classData, onLeaveClass }: StudentClass
         {/* Left Panel - Whiteboard */}
         <div className="flex-1 p-4">
           <div className="bg-white rounded-lg shadow-sm h-full">
-            <WhiteBoard
+            <FullWhiteBoard
               isTeacher={false}
               bandwidthMode={bandwidthSettings.mode}
               roomId={classData.roomId}
               classId={classData._id}
+              teacherName={classData.teacher?.name || 'Teacher'}
+              lectureTitle={`Lecture ${classData.lectureNumber}`}
+              subject={classData.subject}
+              userId={user.id}
+              userName={user.name || 'Student'}
             />
           </div>
         </div>
@@ -235,13 +239,13 @@ function StudentClassroomContent({ user, classData, onLeaveClass }: StudentClass
             </div>
           </div>
 
-          {/* Audio Controls */}
+          {/* Audio Status */}
           <div className="bg-white rounded-lg shadow-sm p-4">
-            <h3 className="font-semibold text-gray-800 mb-3">Audio Settings</h3>
-            <AudioControls
-              isTeaching={false}
-              bandwidthMode={bandwidthSettings.mode}
-            />
+            <h3 className="font-semibold text-gray-800 mb-3">Audio Status</h3>
+            <div className="flex items-center space-x-2">
+              <Mic className="w-4 h-4 text-green-500" />
+              <span className="text-sm text-gray-600">Listening to teacher</span>
+            </div>
           </div>
 
           {/* Bandwidth Settings */}
@@ -267,12 +271,11 @@ function StudentClassroomContent({ user, classData, onLeaveClass }: StudentClass
           {/* Chat Panel */}
           {showChat && (
             <div className="bg-white rounded-lg shadow-sm">
-              <ChatPanel
-                messages={[]}
-                onSendMessage={(message) => {
-                  console.log('Sending message:', message)
-                  // TODO: Implement chat functionality
-                }}
+              <RealtimeChat
+                roomId={classData.roomId}
+                userId={user.id}
+                userName={user.name || 'Student'}
+                isTeacher={false}
               />
             </div>
           )}

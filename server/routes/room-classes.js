@@ -1,6 +1,35 @@
 const express = require('express')
 const router = express.Router()
+const mongoose = require('mongoose')
 const { RoomClass, ClassSession, User, SessionParticipant } = require('../models')
+
+// Get a specific class by ID
+router.get('/:classId', async (req, res) => {
+  try {
+    const { classId } = req.params
+
+    const roomClass = await RoomClass.findById(classId)
+      .populate('teacherId', 'name email')
+
+    if (!roomClass) {
+      return res.status(404).json({
+        success: false,
+        error: 'Class not found'
+      })
+    }
+
+    res.json({
+      success: true,
+      class: roomClass
+    })
+  } catch (error) {
+    console.error('Error fetching class:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch class'
+    })
+  }
+})
 
 // Get all classes for a room
 router.get('/room/:roomId', async (req, res) => {
@@ -45,21 +74,15 @@ router.post('/create', async (req, res) => {
     } = req.body
 
     // Validate required fields
-    if (!roomId || !teacherId || !subject || !topic || !scheduledDate) {
+    if (!teacherId || !subject || !topic || !scheduledDate) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: roomId, teacherId, subject, topic, scheduledDate'
+        error: 'Missing required fields: teacherId, subject, topic, scheduledDate'
       })
     }
 
-    // Check if room exists (look for ClassSession with this roomId)
-    const session = await ClassSession.findOne({ roomId: roomId })
-    if (!session) {
-      return res.status(404).json({
-        success: false,
-        error: 'Room not found'
-      })
-    }
+    // Generate roomId if not provided
+    const finalRoomId = roomId || `ROOM-${Date.now().toString().slice(-6)}`
 
     // Verify teacher
     const teacher = await User.findById(teacherId)
@@ -73,15 +96,15 @@ router.post('/create', async (req, res) => {
     // Auto-generate lecture number if not provided
     let finalLectureNumber = lectureNumber
     if (!finalLectureNumber) {
-      const lastClass = await RoomClass.findOne({ roomId })
+      const lastClass = await RoomClass.findOne({ roomId: finalRoomId })
         .sort({ lectureNumber: -1 })
       finalLectureNumber = lastClass ? lastClass.lectureNumber + 1 : 1
     }
 
-    // Create new class
+    // Create new class (sessionId will be created when class starts)
     const newClass = new RoomClass({
-      roomId,
-      sessionId: session._id, // Link to the room's session
+      roomId: finalRoomId,
+      // sessionId: null, // Will be created when class actually starts
       teacherId,
       lectureNumber: finalLectureNumber,
       subject,
@@ -166,17 +189,45 @@ router.post('/:classId/start', async (req, res) => {
       })
     }
 
+    // Create a ClassSession if it doesn't exist
+    if (!roomClass.sessionId) {
+      // Generate a unique 8-character roomId for ClassSession (within 10 char limit)
+      // Format: L{lectureNumber}{timestamp_last4}{random2}
+      const timestamp4 = Date.now().toString().slice(-4)
+      const random2 = Math.random().toString(36).substring(2, 4).toUpperCase()
+      const shortRoomId = `L${roomClass.lectureNumber}${timestamp4}${random2}`
+      
+      const newSession = new ClassSession({
+        teacherId: roomClass.teacherId,
+        roomId: shortRoomId, // Use shorter roomId for ClassSession
+        roomPassword: Math.random().toString(36).substring(2, 8).toUpperCase(), // Generate random password
+        className: `${roomClass.subject} - ${roomClass.topic}`,
+        title: roomClass.topic,
+        subject: roomClass.subject,
+        description: roomClass.description || `Live class for ${roomClass.subject}`,
+        isLive: true,
+        startTime: new Date(),
+        bandwidthMode: 'normal'
+      })
+      await newSession.save()
+      
+      roomClass.sessionId = newSession._id
+      console.log('📚 Created new session for class:', roomClass.sessionId, 'with short roomId:', newSession.roomId)
+    }
+
     // Update class status to live
     roomClass.status = 'live'
     roomClass.startTime = new Date()
     await roomClass.save()
 
-    // Populate teacher info
+    // Populate teacher info and session info
     await roomClass.populate('teacherId', 'name email')
+    await roomClass.populate('sessionId')
 
     res.json({
       success: true,
       class: roomClass,
+      session: roomClass.sessionId,
       message: 'Class started successfully'
     })
   } catch (error) {
@@ -188,65 +239,16 @@ router.post('/:classId/start', async (req, res) => {
   }
 })
 
-// End a class
-router.post('/:classId/end', async (req, res) => {
-  try {
-    const { classId } = req.params
-
-    const roomClass = await RoomClass.findById(classId)
-    if (!roomClass) {
-      return res.status(404).json({
-        success: false,
-        error: 'Class not found'
-      })
-    }
-
-    // Update class status to completed
-    roomClass.status = 'completed'
-    roomClass.endTime = new Date()
-    
-    // Calculate actual duration if class was started
-    if (roomClass.startTime) {
-      const actualDuration = Math.round((roomClass.endTime - roomClass.startTime) / (1000 * 60))
-      roomClass.duration = actualDuration
-    }
-
-    await roomClass.save()
-
-    // Also end the associated session
-    if (roomClass.sessionId) {
-      const session = await ClassSession.findById(roomClass.sessionId)
-      if (session) {
-        session.isLive = false
-        session.endTime = new Date()
-        await session.save()
-      }
-    }
-
-    // Populate teacher info
-    await roomClass.populate('teacherId', 'name email')
-
-    res.json({
-      success: true,
-      class: roomClass,
-      message: 'Class ended successfully'
-    })
-  } catch (error) {
-    console.error('Error ending class:', error)
-    res.status(500).json({
-      success: false,
-      error: 'Failed to end class'
-    })
-  }
-})
-
 // Join a class (student attendance)
 router.post('/:classId/join', async (req, res) => {
   try {
     const { classId } = req.params
     const { userId } = req.body
 
+    console.log('📋 Join class request:', { classId, userId })
+
     if (!userId) {
+      console.log('❌ Missing userId in join request')
       return res.status(400).json({
         success: false,
         error: 'User ID is required'
@@ -255,20 +257,36 @@ router.post('/:classId/join', async (req, res) => {
 
     const roomClass = await RoomClass.findById(classId)
     if (!roomClass) {
+      console.log('❌ Class not found:', classId)
       return res.status(404).json({
         success: false,
         error: 'Class not found'
       })
     }
 
+    console.log('🏫 Found class:', {
+      id: roomClass._id,
+      topic: roomClass.topic,
+      sessionId: roomClass.sessionId,
+      hasSessionId: !!roomClass.sessionId
+    })
+
     // Find the associated session for whiteboard access
     const session = await ClassSession.findById(roomClass.sessionId)
     if (!session) {
+      console.log('❌ Associated session not found for sessionId:', roomClass.sessionId)
       return res.status(404).json({
         success: false,
         error: 'Associated session not found'
       })
     }
+
+    console.log('🎓 Found session:', {
+      id: session._id,
+      roomId: session.roomId,
+      teacherId: session.teacherId,
+      isLive: session.isLive
+    })
 
     // Check if user is already in attendees
     const existingAttendee = roomClass.attendees.find(
@@ -276,6 +294,7 @@ router.post('/:classId/join', async (req, res) => {
     )
 
     if (existingAttendee) {
+      console.log('👤 Existing attendee found, updating join time')
       // Update join time for re-joining (user can rejoin to update their presence)
       existingAttendee.joinedAt = new Date()
       
@@ -283,11 +302,16 @@ router.post('/:classId/join', async (req, res) => {
       await roomClass.save()
       
       // Ensure SessionParticipant record exists for whiteboard access
-      await SessionParticipant.findOneAndUpdate(
-        { sessionId: session._id, userId: userId },
+      console.log('🔄 Creating/updating SessionParticipant for existing attendee:', {
+        sessionId: session._id,
+        userId: userId
+      })
+      
+      const participant = await SessionParticipant.findOneAndUpdate(
+        { sessionId: session._id, userId: new mongoose.Types.ObjectId(userId) },
         {
           sessionId: session._id,
-          userId: userId,
+          userId: new mongoose.Types.ObjectId(userId),
           isActive: true,
           joinedAt: new Date(),
           bandwidthMode: 'normal'
@@ -295,14 +319,23 @@ router.post('/:classId/join', async (req, res) => {
         { upsert: true, new: true }
       )
       
-      return res.json({
+      console.log('✅ SessionParticipant created/updated:', participant._id)
+      
+      const rejoinResponse = {
         success: true,
         message: 'Successfully rejoined class',
         attendeeCount: roomClass.attendees.length,
-        isRejoining: true
-      })
+        isRejoining: true,
+        sessionParticipantId: participant._id,
+        sessionRoomId: session.roomId // Include the ClassSession roomId for WebSocket connection
+      }
+      
+      console.log('📤 Sending rejoin response:', rejoinResponse)
+      return res.json(rejoinResponse)
     }
 
+    console.log('➕ Adding new attendee to class')
+    
     // Add user to attendees with initial join time
     roomClass.attendees.push({
       userId,
@@ -314,11 +347,16 @@ router.post('/:classId/join', async (req, res) => {
     roomClass.stats.totalAttendees = roomClass.attendees.length
 
     // Create SessionParticipant record for whiteboard access
-    await SessionParticipant.findOneAndUpdate(
-      { sessionId: session._id, userId: userId },
+    console.log('🔄 Creating SessionParticipant for new attendee:', {
+      sessionId: session._id,
+      userId: userId
+    })
+    
+    const participant = await SessionParticipant.findOneAndUpdate(
+      { sessionId: session._id, userId: new mongoose.Types.ObjectId(userId) },
       {
         sessionId: session._id,
-        userId: userId,
+        userId: new mongoose.Types.ObjectId(userId),
         isActive: true,
         joinedAt: new Date(),
         bandwidthMode: 'normal'
@@ -326,13 +364,20 @@ router.post('/:classId/join', async (req, res) => {
       { upsert: true, new: true }
     )
 
+    console.log('✅ SessionParticipant created:', participant._id)
+
     await roomClass.save()
 
-    res.json({
+    const response = {
       success: true,
       message: 'Successfully joined class',
-      attendeeCount: roomClass.attendees.length
-    })
+      attendeeCount: roomClass.attendees.length,
+      sessionParticipantId: participant._id,
+      sessionRoomId: session.roomId // Include the ClassSession roomId for WebSocket connection
+    }
+    
+    console.log('📤 Sending join response:', response)
+    res.json(response)
   } catch (error) {
     console.error('Error joining class:', error)
     res.status(500).json({
@@ -485,12 +530,12 @@ router.get('/teacher/:teacherId/upcoming', async (req, res) => {
 router.post('/:classId/end', async (req, res) => {
   try {
     const { classId } = req.params
-    const { userId } = req.body
+    const { teacherId, message } = req.body
 
-    if (!userId) {
+    if (!teacherId) {
       return res.status(400).json({
         success: false,
-        error: 'User ID is required'
+        error: 'Teacher ID is required'
       })
     }
 
@@ -503,7 +548,7 @@ router.post('/:classId/end', async (req, res) => {
     }
 
     // Check if user is the teacher
-    if (roomClass.teacherId.toString() !== userId) {
+    if (roomClass.teacherId.toString() !== teacherId) {
       return res.status(403).json({
         success: false,
         error: 'Only the teacher can end the class'
@@ -511,31 +556,41 @@ router.post('/:classId/end', async (req, res) => {
     }
 
     // Update class status and end time
-    roomClass.status = 'ended'
+    roomClass.status = 'completed'
     roomClass.endTime = new Date()
 
     // Calculate final attendance for all attendees
-    const actualDuration = roomClass.endTime - new Date(roomClass.startTime)
-    const actualDurationMinutes = actualDuration / (1000 * 60)
+    if (roomClass.startTime) {
+      const actualDuration = roomClass.endTime - new Date(roomClass.startTime)
+      const actualDurationMinutes = actualDuration / (1000 * 60)
 
-    roomClass.attendees.forEach(attendee => {
-      if (attendee.joinedAt) {
-        const leaveTime = attendee.leftAt || roomClass.endTime
-        const timeSpentMs = leaveTime - new Date(attendee.joinedAt)
-        const timeSpentMinutes = timeSpentMs / (1000 * 60)
-        
-        // Student is present if they spent more than 50% of the actual class time
-        attendee.attendancePercentage = Math.min(100, Math.round((timeSpentMinutes / actualDurationMinutes) * 100))
-        attendee.isPresent = attendee.attendancePercentage >= 50
-        
-        if (!attendee.leftAt) {
-          attendee.leftAt = roomClass.endTime
+      roomClass.attendees.forEach(attendee => {
+        if (attendee.joinedAt) {
+          const leaveTime = attendee.leftAt || roomClass.endTime
+          const timeSpentMs = leaveTime - new Date(attendee.joinedAt)
+          const timeSpentMinutes = timeSpentMs / (1000 * 60)
+          
+          // Student is present if they spent more than 50% of the actual class time
+          attendee.attendancePercentage = Math.min(100, Math.round((timeSpentMinutes / actualDurationMinutes) * 100))
+          attendee.isPresent = attendee.attendancePercentage >= 50
+          
+          if (!attendee.leftAt) {
+            attendee.leftAt = roomClass.endTime
+          }
         }
-      }
-    })
+      })
+    }
 
-    // Update all SessionParticipants to inactive
+    // Update associated session
     if (roomClass.sessionId) {
+      const session = await ClassSession.findById(roomClass.sessionId)
+      if (session) {
+        session.isLive = false
+        session.endTime = new Date()
+        await session.save()
+      }
+
+      // Update all SessionParticipants to inactive
       await SessionParticipant.updateMany(
         { sessionId: roomClass.sessionId },
         {
@@ -547,13 +602,26 @@ router.post('/:classId/end', async (req, res) => {
 
     await roomClass.save()
 
-    // Broadcast class ended event to all connected clients
-    if (req.app.get('io')) {
-      req.app.get('io').emit('class-ended', {
+    // Broadcast class ended event to all connected clients via socket
+    const io = req.app.get('io')
+    if (io) {
+      // Emit to the specific room/session
+      io.to(roomClass.sessionId.toString()).emit('class-ended', {
         classId: classId,
         roomId: roomClass.roomId,
-        message: 'Class has been ended by the teacher'
+        message: message || 'Class has been ended by the teacher',
+        endedAt: roomClass.endTime.toISOString(),
+        redirectTo: '/student-dashboard'
       })
+      
+      // Also emit teacher ended class event for socket handling
+      io.to(roomClass.sessionId.toString()).emit('teacher-ended-class', {
+        classId: classId,
+        roomId: roomClass.roomId,
+        message: message || 'Class has been ended by the teacher'
+      })
+      
+      console.log('🛑 Class ended event broadcasted to room:', roomClass.sessionId.toString())
     }
 
     res.json({
@@ -562,7 +630,7 @@ router.post('/:classId/end', async (req, res) => {
       finalAttendance: roomClass.attendees.map(a => ({
         userId: a.userId,
         attendancePercentage: a.attendancePercentage,
-        isPresent: a.isPresent
+        isPresent: a.isPresent || false
       }))
     })
 

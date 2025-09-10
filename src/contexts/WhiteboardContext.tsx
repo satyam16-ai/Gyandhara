@@ -39,6 +39,8 @@ interface WhiteboardContextType {
     compressionRatio: number
     packetsPerSecond: number
   }
+  currentUserId: string | null
+  currentUserName: string | null
   connect: (roomId: string, userId: string, userToken: string, isTeacherParam?: boolean) => void
   disconnect: () => void
   sendDrawingElement: (element: DrawingElement) => void
@@ -82,6 +84,8 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
     isTeacher: boolean
     joinedAt: Date
   }>>([])
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentUserName, setCurrentUserName] = useState<string | null>(null)
   const [compressionStats, setCompressionStats] = useState({
     originalSize: 0,
     compressedSize: 0,
@@ -94,6 +98,23 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
   const packetCountRef = useRef(0)
 
   const connect = useCallback((roomId: string, userId: string, userToken: string, isTeacherParam: boolean = false) => {
+    console.log('� WhiteboardContext connecting with:', {
+      roomId,
+      userId,
+      userToken: userToken ? 'provided' : 'missing',
+      isTeacherParam
+    })
+    
+    // Store current user info
+    setCurrentUserId(userId)
+    setIsTeacher(isTeacherParam)
+    
+    // Validate roomId is a string
+    if (!roomId || typeof roomId !== 'string') {
+      console.error('❌ Invalid roomId passed to connect:', { roomId, type: typeof roomId })
+      return
+    }
+    
     // Set teacher status only if it's different
     if (isTeacher !== isTeacherParam) {
       setIsTeacher(isTeacherParam)
@@ -104,6 +125,8 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
       socketRef.current.disconnect()
     }
 
+    console.log('🌐 Creating new socket connection to: http://localhost:8080');
+    console.log('⚠️ DEBUG: Server might be running on different port - check server logs!');
     // Create new socket connection
     const newSocket = io('http://localhost:8080', {
       transports: ['websocket', 'polling'],
@@ -118,6 +141,13 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
     newSocket.on('connect', () => {
       console.log('🔗 Connected to whiteboard server')
       setIsConnected(true)
+      
+      console.log('🏠 Attempting to join room with:', {
+        roomId,
+        roomIdType: typeof roomId,
+        userId,
+        userToken: userToken ? 'provided' : 'missing'
+      })
       
       // Join the room
       newSocket.emit('join-room', {
@@ -135,7 +165,25 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
     // Room events
     newSocket.on('room-joined', (data) => {
       console.log('🎓 Joined whiteboard room:', data.roomId)
+      console.log('🔍 DEBUG room-joined data:', JSON.stringify(data, null, 2))
       setIsTeacher(data.user.isTeacher)
+      
+      // Store current user info from server response
+      if (data.user) {
+        const userId = data.user._id || data.user.id
+        console.log('🔍 DEBUG user ID extraction:', {
+          'data.user._id': data.user._id,
+          'data.user.id': data.user.id,
+          'final userId': userId
+        })
+        setCurrentUserId(userId)
+        setCurrentUserName(data.user.name)
+        console.log('👤 Current user stored:', { 
+          id: userId, 
+          name: data.user.name,
+          role: data.user.role 
+        })
+      }
       
       // Load existing drawing elements
       if (data.currentState.drawingElements) {
@@ -619,6 +667,8 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
     isTeacher,
     connectedUsers,
     compressionStats,
+    currentUserId,
+    currentUserName,
     connect,
     disconnect,
     sendDrawingElement,

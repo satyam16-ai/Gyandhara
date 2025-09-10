@@ -270,7 +270,7 @@ const strokeSchema = new mongoose.Schema({
   },
   tool: {
     type: String,
-    enum: ['pen', 'eraser', 'highlighter', 'freehand', 'rectangle', 'circle', 'triangle', 'line', 'arrow', 'text'],
+    enum: ['pen', 'eraser', 'highlighter', 'highlight', 'freehand', 'rectangle', 'circle', 'triangle', 'line', 'arrow', 'text'],
     default: 'pen'
   },
   // Store complete RoughJS element data as JSON for advanced features
@@ -286,17 +286,39 @@ const strokeSchema = new mongoose.Schema({
   timestamps: true
 })
 
-// Audio Chunk Schema
+// Audio Chunk Schema - Support both binary and legacy formats
 const audioChunkSchema = new mongoose.Schema({
   sessionId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ClassSession',
     required: true
   },
+  // Legacy Base64 format (backward compatibility)
   chunkData: {
     type: String, // Base64 encoded audio data
-    required: true
+    required: function() {
+      return !this.isBinaryFormat // Required only for legacy format
+    }
   },
+  // New binary format fields (optional for real-time streaming)
+  binaryData: {
+    type: Buffer, // Raw binary audio data
+    required: false // Optional - for analytics only, not required for real-time
+  },
+  isBinaryFormat: {
+    type: Boolean,
+    default: false
+  },
+  originalSize: {
+    type: Number // Original Float32Array size for compression tracking
+  },
+  compressedSize: {
+    type: Number // Compressed Int16Array size
+  },
+  compressionRatio: {
+    type: Number // For analytics
+  },
+  // Common fields for both formats
   time: {
     type: Number,
     required: true
@@ -311,7 +333,12 @@ const audioChunkSchema = new mongoose.Schema({
   },
   format: {
     type: String,
-    default: 'opus'
+    default: 'opus',
+    enum: ['opus', 'pcm', 'binary-int16', 'binary-int16-realtime', 'base64-legacy']
+  },
+  sampleRate: {
+    type: Number,
+    default: 48000
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -652,6 +679,169 @@ roomClassSchema.index({ roomId: 1, lectureNumber: 1 }, { unique: true })
 roomClassSchema.index({ sessionId: 1, scheduledDate: 1 })
 roomClassSchema.index({ teacherId: 1, status: 1 })
 
+// Classroom Schema - Persistent classrooms that teachers create
+const classroomSchema = new mongoose.Schema({
+  classroomCode: {
+    type: String,
+    required: true,
+    unique: true,
+    uppercase: true,
+    minlength: 6,
+    maxlength: 10,
+    index: true
+  },
+  name: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 100
+  },
+  subject: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  description: {
+    type: String,
+    trim: true
+  },
+  teacherId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  teacherName: {
+    type: String,
+    required: true
+  },
+  // Students enrolled in this classroom
+  enrolledStudents: [{
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    studentName: String,
+    enrolledAt: {
+      type: Date,
+      default: Date.now
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive', 'removed'],
+      default: 'active'
+    }
+  }],
+  // Classroom settings
+  settings: {
+    allowSelfEnrollment: {
+      type: Boolean,
+      default: true
+    },
+    requireApproval: {
+      type: Boolean,
+      default: false
+    },
+    maxStudents: {
+      type: Number,
+      default: 50,
+      min: 1,
+      max: 200
+    },
+    isArchived: {
+      type: Boolean,
+      default: false
+    }
+  },
+  // Statistics
+  stats: {
+    totalLectures: {
+      type: Number,
+      default: 0
+    },
+    totalStudents: {
+      type: Number,
+      default: 0
+    },
+    totalHours: {
+      type: Number,
+      default: 0
+    },
+    averageAttendance: {
+      type: Number,
+      default: 0
+    }
+  }
+}, {
+  timestamps: true
+})
+
+// Student Enrollment Schema - Track which students are in which classrooms
+const studentEnrollmentSchema = new mongoose.Schema({
+  studentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  classroomId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Classroom',
+    required: true
+  },
+  classroomCode: {
+    type: String,
+    required: true,
+    uppercase: true
+  },
+  enrolledAt: {
+    type: Date,
+    default: Date.now
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'active', 'inactive', 'removed'],
+    default: 'active'
+  },
+  // Attendance statistics for this student in this classroom
+  attendanceStats: {
+    totalLecturesAttended: {
+      type: Number,
+      default: 0
+    },
+    totalLecturesScheduled: {
+      type: Number,
+      default: 0
+    },
+    attendancePercentage: {
+      type: Number,
+      default: 0
+    },
+    lastAttended: Date
+  }
+}, {
+  timestamps: true
+})
+
+// Ensure unique enrollment
+studentEnrollmentSchema.index({ studentId: 1, classroomId: 1 }, { unique: true })
+
+// Classroom indexes
+classroomSchema.index({ teacherId: 1, 'settings.isArchived': 1 })
+classroomSchema.index({ classroomCode: 1 }, { unique: true })
+
+// Update RoomClass to reference Classroom
+roomClassSchema.add({
+  classroomId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Classroom',
+    required: false // Made optional for backward compatibility
+  },
+  classroomCode: {
+    type: String,
+    uppercase: true
+  }
+})
+
 module.exports = {
   User: mongoose.model('User', userSchema),
   ClassSession: mongoose.model('ClassSession', classSessionSchema),
@@ -660,6 +850,8 @@ module.exports = {
   ChatMessage: mongoose.model('ChatMessage', chatMessageSchema),
   SessionParticipant: mongoose.model('SessionParticipant', sessionParticipantSchema),
   RoomClass: mongoose.model('RoomClass', roomClassSchema),
+  Classroom: mongoose.model('Classroom', classroomSchema),
+  StudentEnrollment: mongoose.model('StudentEnrollment', studentEnrollmentSchema),
   AIContent: mongoose.model('AIContent', aiContentSchema),
   OTP: mongoose.model('OTP', otpSchema),
   AdminSession: mongoose.model('AdminSession', adminSessionSchema)

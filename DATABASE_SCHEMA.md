@@ -1,7 +1,7 @@
-# Gyaandhara Educational Platform - Complete Database Schema
+# VoiceBoard Educational Platform - Complete Database Schema
 
 ## Overview
-This document provides the complete MongoDB database schema for the Gyaandhara educational platform, including all collections, fields, relationships, and indexes.
+This document provides the complete MongoDB database schema for the VoiceBoard educational platform, including all collections, fields, relationships, and indexes.
 
 ## Database Information
 - **Database System**: MongoDB with Mongoose ODM
@@ -919,8 +919,8 @@ db.classsessions.createIndex({ "title": "text", "subject": "text" })
 
 ```bash
 # Database
-MONGODB_URI=mongodb://localhost:27017/gyaandhara
-DB_NAME=gyaandhara
+MONGODB_URI=mongodb://localhost:27017/voiceboard
+DB_NAME=voiceboard
 
 # Server
 PORT=8080
@@ -933,7 +933,7 @@ BCRYPT_SALT_ROUNDS=12
 # Email Service (Twilio)
 TWILIO_ACCOUNT_SID=your-twilio-sid
 TWILIO_AUTH_TOKEN=your-twilio-token
-TWILIO_FROM_EMAIL=noreply@gyaandhara.com
+TWILIO_FROM_EMAIL=noreply@voiceboard.com
 
 # Optional AI Services
 OPENAI_API_KEY=your-openai-key
@@ -944,4 +944,4 @@ UPLOAD_DIR=./uploads
 MAX_FILE_SIZE=10485760  # 10MB
 ```
 
-This comprehensive database schema supports the full Gyaandhara platform with real-time collaboration, compression, analytics, and scalability features.
+This comprehensive database schema supports the full VoiceBoard platform with real-time collaboration, compression, analytics, and scalability features.

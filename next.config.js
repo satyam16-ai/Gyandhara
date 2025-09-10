@@ -5,7 +5,6 @@ const nextConfig = {
     domains: ['localhost'],
     unoptimized: true
   },
-
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -18,13 +17,13 @@ const nextConfig = {
         buffer: require.resolve('buffer')
       }
     }
-
+    
     // Handle node-opus for client-side builds
     config.externals = config.externals || []
     if (!isServer) {
       config.externals.push('node-opus')
     }
-
+    
     return config
   },
   env: {

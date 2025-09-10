@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import TeacherDashboard from '../../src/components/TeacherDashboard'
+import TeacherDashboard from '@/components/NewTeacherDashboard'
 
 interface User {
   id: string
@@ -14,66 +14,58 @@ interface User {
 export default function TeacherDashboardPage() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [roomId, setRoomId] = useState<string>('')
-  const [classId, setClassId] = useState<string>('')
+  const [classroomData, setClassroomData] = useState({
+    roomId: '',
+    classId: '',
+  })
   const router = useRouter()
 
   useEffect(() => {
+    // Check if user is logged in and is a teacher
     const token = localStorage.getItem('userToken')
-    const userRole = localStorage.getItem('userRole')
-    const userName = localStorage.getItem('userName')
-    const userId = localStorage.getItem('userId')
+    const role = localStorage.getItem('userRole')
+    const name = localStorage.getItem('userName')
+    const id = localStorage.getItem('userId')
 
-    if (!token || userRole !== 'teacher') {
-      router.push('/')
+    console.log('🔍 Teacher dashboard - checking auth:', { token: !!token, role, name, id })
+
+    if (!token || role !== 'teacher') {
+      console.log('❌ Not authenticated as teacher, redirecting to login')
+      router.push('/login')
       return
     }
 
-    setUser({
-      id: userId || '',
-      name: userName || '',
-      role: userRole || '',
-      token: token || ''
-    })
-
-    // Generate or get existing room ID for this teacher session
-    const existingRoomId = localStorage.getItem('teacherRoomId')
-    const existingClassId = localStorage.getItem('teacherClassId')
-    
-    if (existingRoomId && existingClassId) {
-      setRoomId(existingRoomId)
-      setClassId(existingClassId)
-    } else {
-      // Generate new room ID
-      const newRoomId = `ROOM-${Date.now().toString().slice(-6)}`
-      const newClassId = `CLASS-${Date.now()}`
+    if (token && role === 'teacher' && name && id) {
+      setUser({ id, name, role, token })
       
-      setRoomId(newRoomId)
-      setClassId(newClassId)
+      // Check if already in an active classroom
+      const currentRoomId = localStorage.getItem('teacherRoomId')
+      const currentClassId = localStorage.getItem('teacherClassId')
+      const currentTeachingClass = localStorage.getItem('currentTeachingClass')
       
-      localStorage.setItem('teacherRoomId', newRoomId)
-      localStorage.setItem('teacherClassId', newClassId)
+      console.log('🎓 Checking existing classroom:', { 
+        currentRoomId, 
+        currentClassId, 
+        currentTeachingClass 
+      })
+      
+      if (currentRoomId && currentClassId) {
+        setClassroomData({
+          roomId: currentRoomId,
+          classId: currentClassId
+        })
+      }
     }
 
     setLoading(false)
   }, [router])
 
-  const handleLogout = () => {
-    localStorage.removeItem('userToken')
-    localStorage.removeItem('userRole')
-    localStorage.removeItem('userName')
-    localStorage.removeItem('userId')
-    localStorage.removeItem('teacherRoomId')
-    localStorage.removeItem('teacherClassId')
-    router.push('/')
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-700">Loading dashboard...</p>
+          <p className="text-gray-700 font-medium">Loading teacher dashboard...</p>
         </div>
       </div>
     )
@@ -83,32 +75,11 @@ export default function TeacherDashboardPage() {
     return null
   }
 
+  // Always show the comprehensive TeacherDashboard component
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header with logout */}
-      <div className="bg-white shadow-sm border-b px-6 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Welcome, {user.name}!</h1>
-          <p className="text-gray-600">Teacher Dashboard - Gyaandhara Platform</p>
-          {roomId && (
-            <p className="text-sm text-blue-600 mt-1">Room ID: {roomId}</p>
-          )}
-        </div>
-        <button
-          onClick={handleLogout}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-        >
-          Logout
-        </button>
-      </div>
-      
-      {/* Main Dashboard */}
-      <TeacherDashboard 
-        roomId={roomId}
-        classId={classId}
-        userId={user.id}
-        userToken={user.token}
-      />
-    </div>
+    <TeacherDashboard
+      user={user}
+    />
   )
 }
+

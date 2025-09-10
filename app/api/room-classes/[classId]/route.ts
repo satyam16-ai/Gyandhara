@@ -2,6 +2,29 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080'
 
+// GET /api/room-classes/[classId] - Get a specific class
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ classId: string }> }
+) {
+  try {
+    const { classId } = await params
+
+    const response = await fetch(`${BACKEND_URL}/api/room-classes/${classId}`, {
+      method: 'GET',
+    })
+
+    const data = await response.json()
+    return NextResponse.json(data, { status: response.status })
+  } catch (error) {
+    console.error('Error fetching class:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch class' },
+      { status: 500 }
+    )
+  }
+}
+
 // PUT /api/room-classes/[classId] - Update class details
 export async function PUT(
   request: NextRequest,
