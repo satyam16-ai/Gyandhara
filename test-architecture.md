@@ -80,7 +80,6 @@
 - ✅ **Real-time Whiteboard**: `FullWhiteBoard.tsx` with professional UI
 - ✅ **WebSocket Sync**: Live drawing synchronization across all participants
 - ✅ **Chat System**: Real-time messaging, hand raising, participant list
-- ✅ **Audio Controls**: Microphone, volume, bandwidth management
 - ✅ **Drawing Tools**: Pen, shapes, text, highlighter, eraser with RoughJS
 - ✅ **Session Management**: Proper participant tracking and room management
 

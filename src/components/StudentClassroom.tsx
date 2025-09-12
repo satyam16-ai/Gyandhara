@@ -1,6 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect   const [bandwidthSettings] = useState({
+    mode: 'normal' as 'ultra-low' | 'low' | 'normal',
+    maxVideoQuality: '720p',
+    audioQuality: 'medium',
+    strokeSimplification: false,
+    autoCompress: true
+  })react'
 import { useRouter } from 'next/navigation'
 import { Users, Clock, LogOut, Mic, MicOff, Hand, MessageSquare, ChevronRight, ChevronLeft } from 'lucide-react'
 import FullWhiteBoard from './FullWhiteBoard'
@@ -154,20 +160,18 @@ function StudentClassroomContent({ user, classData, onLeaveClass }: StudentClass
       {/* Main Content */}
       <div className="flex-1 flex">
         {/* Left Panel - Whiteboard */}
-        <div className="flex-1 p-4">
-          <div className="bg-white rounded-lg shadow-sm h-full">
-            <FullWhiteBoard
-              isTeacher={false}
-              bandwidthMode={bandwidthSettings.mode}
-              roomId={classData.roomId}
-              classId={classData._id}
-              teacherName={classData.teacher?.name || 'Teacher'}
-              lectureTitle={`Lecture ${classData.lectureNumber}`}
-              subject={classData.subject}
-              userId={user.id}
-              userName={user.name || 'Student'}
-            />
-          </div>
+        <div className="flex-1">
+          <FullWhiteBoard
+            isTeacher={false}
+            bandwidthMode={bandwidthSettings.mode}
+            roomId={classData.roomId}
+            classId={classData._id}
+            teacherName={classData.teacher?.name || 'Teacher'}
+            lectureTitle={`Lecture ${classData.lectureNumber}`}
+            subject={classData.subject}
+            userId={user.id}
+            userName={user.name || 'Student'}
+          />
         </div>
 
         {/* Right Panel - Controls & Info */}
@@ -253,7 +257,7 @@ function StudentClassroomContent({ user, classData, onLeaveClass }: StudentClass
             <h3 className="font-semibold text-gray-800 mb-3">Connection Quality</h3>
             <select
               value={bandwidthSettings.mode}
-              onChange={(e) => setBandwidthSettings(prev => ({
+              onChange={(e) => setBandwidthSettings((prev: any) => ({
                 ...prev,
                 mode: e.target.value as 'ultra-low' | 'low' | 'normal'
               }))}
@@ -270,13 +274,20 @@ function StudentClassroomContent({ user, classData, onLeaveClass }: StudentClass
 
           {/* Chat Panel */}
           {showChat && (
-            <div className="bg-white rounded-lg shadow-sm">
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <h3 className="font-semibold text-gray-800 mb-3">Chat</h3>
+              <p className="text-gray-600 text-sm">Chat functionality will be available in the whiteboard.</p>
+              {/* 
               <RealtimeChat
-                roomId={classData.roomId}
-                userId={user.id}
-                userName={user.name || 'Student'}
+                socket={socket}
+                currentUserId={user.id}
+                currentUserName={user.name || 'Student'}
                 isTeacher={false}
+                connectedUsers={students}
+                isVisible={true}
+                onToggleVisibility={() => setShowChat(false)}
               />
+              */}
             </div>
           )}
 

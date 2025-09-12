@@ -1,7 +1,7 @@
 // WebSocket service for real-time communication with MongoDB backend
 
 import { io, Socket } from 'socket.io-client'
-import { StrokeData, AudioChunk, ChatMessage } from '@/types'
+import { StrokeData, ChatMessage } from '@/types'
 
 class WebSocketService {
   private socket: Socket | null = null
@@ -63,16 +63,6 @@ class WebSocketService {
     this.socket.emit('new-stroke', strokeData)
   }
 
-  // Send audio chunk to the session
-  sendAudioChunk(audioData: AudioChunk) {
-    if (!this.socket) {
-      console.error('Socket not connected')
-      return
-    }
-
-    this.socket.emit('audio-chunk', audioData)
-  }
-
   // Send chat message
   sendChatMessage(messageData: {
     message: string
@@ -119,10 +109,6 @@ class WebSocketService {
   // Event listeners
   onStrokeAdded(callback: (stroke: StrokeData) => void) {
     this.socket?.on('stroke-added', callback)
-  }
-
-  onAudioReceived(callback: (audio: AudioChunk) => void) {
-    this.socket?.on('audio-received', callback)
   }
 
   onMessageReceived(callback: (message: ChatMessage) => void) {

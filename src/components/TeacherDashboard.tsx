@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import WhiteBoard from '@/components/WhiteBoardNew'
+// import WhiteBoard from '@/components/WhiteBoardNew'
 import StudentList from '@/components/StudentList'
 import BandwidthMonitor from '@/components/BandwidthMonitor'
 import { WhiteboardProvider, useWhiteboard } from '../contexts/WhiteboardContext'
@@ -48,7 +48,6 @@ const TeacherDashboardContent: React.FC<TeacherDashboardProps> = ({
   }>>([])
   const [bandwidthSettings, setBandwidthSettings] = useState({
     mode: 'normal' as 'ultra-low' | 'low' | 'normal',
-    maxAudioBitrate: 64,
     strokeSimplification: false,
     autoCompress: true
   })

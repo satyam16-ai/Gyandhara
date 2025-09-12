@@ -13,7 +13,7 @@ export interface StrokeData {
 
 export interface DrawingElement {
   id: string
-  type: 'freehand' | 'rectangle' | 'circle' | 'triangle' | 'line' | 'arrow' | 'text' | 'highlight'
+  type: 'freehand' | 'rectangle' | 'circle' | 'triangle' | 'line' | 'arrow' | 'text' | 'highlight' | 'image'
   points: number[]
   options: {
     stroke: string
@@ -28,12 +28,8 @@ export interface DrawingElement {
   width?: number
   height?: number
   timestamp: number
-}
-
-export interface AudioChunk {
-  chunk: string // base64 encoded audio data
-  time: number
-  duration: number
+  imageData?: string // base64 image data
+  imageUrl?: string  // image URL
 }
 
 export interface ClassSession {
@@ -44,7 +40,6 @@ export interface ClassSession {
   startTime: Date
   endTime?: Date
   strokes: StrokeData[]
-  audioChunks: AudioChunk[]
   isLive: boolean
   bandwidth: 'ultra-low' | 'low' | 'normal'
 }
@@ -75,7 +70,6 @@ export interface ChatMessage {
 
 export interface BandwidthSettings {
   mode: 'ultra-low' | 'low' | 'normal'
-  maxAudioBitrate: number
   strokeSimplification: boolean
   autoCompress: boolean
 }

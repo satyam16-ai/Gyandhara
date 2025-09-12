@@ -286,68 +286,6 @@ const strokeSchema = new mongoose.Schema({
   timestamps: true
 })
 
-// Audio Chunk Schema - Support both binary and legacy formats
-const audioChunkSchema = new mongoose.Schema({
-  sessionId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'ClassSession',
-    required: true
-  },
-  // Legacy Base64 format (backward compatibility)
-  chunkData: {
-    type: String, // Base64 encoded audio data
-    required: function() {
-      return !this.isBinaryFormat // Required only for legacy format
-    }
-  },
-  // New binary format fields (optional for real-time streaming)
-  binaryData: {
-    type: Buffer, // Raw binary audio data
-    required: false // Optional - for analytics only, not required for real-time
-  },
-  isBinaryFormat: {
-    type: Boolean,
-    default: false
-  },
-  originalSize: {
-    type: Number // Original Float32Array size for compression tracking
-  },
-  compressedSize: {
-    type: Number // Compressed Int16Array size
-  },
-  compressionRatio: {
-    type: Number // For analytics
-  },
-  // Common fields for both formats
-  time: {
-    type: Number,
-    required: true
-  },
-  duration: {
-    type: Number,
-    required: true
-  },
-  bitrate: {
-    type: Number,
-    default: 32000
-  },
-  format: {
-    type: String,
-    default: 'opus',
-    enum: ['opus', 'pcm', 'binary-int16', 'binary-int16-realtime', 'base64-legacy']
-  },
-  sampleRate: {
-    type: Number,
-    default: 48000
-  },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }
-}, {
-  timestamps: true
-})
-
 // Chat Message Schema
 const chatMessageSchema = new mongoose.Schema({
   sessionId: {
@@ -473,14 +411,12 @@ const aiContentSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema)
 const ClassSession = mongoose.model('ClassSession', classSessionSchema)
 const Stroke = mongoose.model('Stroke', strokeSchema)
-const AudioChunk = mongoose.model('AudioChunk', audioChunkSchema)
 const ChatMessage = mongoose.model('ChatMessage', chatMessageSchema)
 const SessionParticipant = mongoose.model('SessionParticipant', sessionParticipantSchema)
 const AIContent = mongoose.model('AIContent', aiContentSchema)
 
 // Indexes for performance
 strokeSchema.index({ sessionId: 1, time: 1 })
-audioChunkSchema.index({ sessionId: 1, time: 1 })
 chatMessageSchema.index({ sessionId: 1, createdAt: -1 })
 sessionParticipantSchema.index({ sessionId: 1, isActive: 1 })
 aiContentSchema.index({ sessionId: 1, contentType: 1 })
@@ -842,11 +778,74 @@ roomClassSchema.add({
   }
 })
 
+// Slide Schema for multi-slide support
+const slideSchema = new mongoose.Schema({
+  sessionId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ClassSession',
+    required: true
+  },
+  slideId: {
+    type: String,
+    required: true
+  },
+  title: {
+    type: String,
+    required: true,
+    default: 'Untitled Slide'
+  },
+  slideNumber: {
+    type: Number,
+    required: true
+  },
+  elements: [{
+    id: String,
+    type: {
+      type: String,
+      enum: ['freehand', 'rectangle', 'circle', 'line', 'arrow', 'text', 'highlight', 'triangle']
+    },
+    points: [Number],
+    options: {
+      stroke: String,
+      strokeWidth: Number,
+      fill: String,
+      roughness: Number,
+      fillStyle: String
+    },
+    text: String,
+    x: Number,
+    y: Number,
+    width: Number,
+    height: Number,
+    timestamp: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  isActive: {
+    type: Boolean,
+    default: false
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  timestamps: true
+})
+
+// Slide indexes
+slideSchema.index({ sessionId: 1, slideNumber: 1 })
+slideSchema.index({ sessionId: 1, isActive: 1 })
+
 module.exports = {
   User: mongoose.model('User', userSchema),
   ClassSession: mongoose.model('ClassSession', classSessionSchema),
   Stroke: mongoose.model('Stroke', strokeSchema),
-  AudioChunk: mongoose.model('AudioChunk', audioChunkSchema),
   ChatMessage: mongoose.model('ChatMessage', chatMessageSchema),
   SessionParticipant: mongoose.model('SessionParticipant', sessionParticipantSchema),
   RoomClass: mongoose.model('RoomClass', roomClassSchema),
@@ -854,5 +853,6 @@ module.exports = {
   StudentEnrollment: mongoose.model('StudentEnrollment', studentEnrollmentSchema),
   AIContent: mongoose.model('AIContent', aiContentSchema),
   OTP: mongoose.model('OTP', otpSchema),
-  AdminSession: mongoose.model('AdminSession', adminSessionSchema)
+  AdminSession: mongoose.model('AdminSession', adminSessionSchema),
+  Slide: mongoose.model('Slide', slideSchema)
 }

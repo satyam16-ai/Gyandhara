@@ -4,40 +4,32 @@ export type BandwidthMode = 'ultra-low' | 'low' | 'normal'
 
 export interface BandwidthConfig {
   mode: BandwidthMode
-  audioBitrate: number
   videoEnabled: boolean
   strokeSimplification: boolean
   maxStrokesPerSecond: number
-  audioChunkSize: number
   compressionLevel: number
 }
 
 export const BANDWIDTH_CONFIGS: Record<BandwidthMode, BandwidthConfig> = {
   'ultra-low': {
     mode: 'ultra-low',
-    audioBitrate: 16000,
     videoEnabled: false,
     strokeSimplification: true,
     maxStrokesPerSecond: 5,
-    audioChunkSize: 512,
     compressionLevel: 0.9
   },
   'low': {
     mode: 'low',
-    audioBitrate: 32000,
     videoEnabled: true,
     strokeSimplification: true,
     maxStrokesPerSecond: 15,
-    audioChunkSize: 1024,
     compressionLevel: 0.7
   },
   'normal': {
     mode: 'normal',
-    audioBitrate: 64000,
     videoEnabled: true,
     strokeSimplification: false,
     maxStrokesPerSecond: 30,
-    audioChunkSize: 2048,
     compressionLevel: 0.5
   }
 }

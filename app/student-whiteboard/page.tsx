@@ -129,6 +129,8 @@ export default function StudentWhiteboardPage() {
           bandwidthMode="normal"
           roomId={sessionData.roomId}
           classId={sessionData.classId}
+          userId={user.id} // Add student ID for audio streaming
+          userName={user.name} // Add student name for audio streaming
           teacherName={sessionData.teacherId?.name || 'Teacher'}
           lectureTitle={sessionData.topic || 'Live Lecture'}
           subject={sessionData.subject || 'Subject'}

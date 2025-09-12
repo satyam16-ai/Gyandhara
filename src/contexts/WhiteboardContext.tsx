@@ -389,6 +389,13 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
       }, 2000)
     })
 
+    // Paper style synchronization for students
+    newSocket.on('paperStyleChanged', (styleData) => {
+      console.log('📄 Paper style changed:', styleData)
+      // This will be handled by FullWhiteBoard component
+      // Just passing through the event
+    })
+
     // Live drawing preview
     newSocket.on('drawing-preview-update', (data) => {
       // Handle live drawing preview for smooth real-time drawing

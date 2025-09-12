@@ -293,47 +293,7 @@ const RealtimeChat: React.FC<RealtimeChatProps> = ({
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 flex flex-col max-h-[80vh]">
-      {/* Chat Header */}
-      <div className="bg-blue-500 text-white p-4 rounded-t-lg flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <MessageCircle className="w-5 h-5" />
-          <h3 className="font-semibold">Class Chat</h3>
-          <span className="text-blue-200 text-sm">({connectedUsers.length} online)</span>
-        </div>
-        <button
-          onClick={onToggleVisibility}
-          className="text-white hover:text-blue-200 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Connected Users List */}
-      <div className="bg-gray-50 border-b border-gray-200 p-2">
-        <div className="flex items-center space-x-1 text-xs text-gray-600">
-          <Users className="w-3 h-3" />
-          <span>Online:</span>
-          <div className="flex flex-wrap gap-1">
-            {connectedUsers.slice(0, 5).map(user => (
-              <span 
-                key={user.id}
-                className={`px-2 py-1 rounded-full text-xs ${
-                  user.isTeacher 
-                    ? 'bg-green-100 text-green-700' 
-                    : 'bg-blue-100 text-blue-700'
-                }`}
-              >
-                {user.name}
-              </span>
-            ))}
-            {connectedUsers.length > 5 && (
-              <span className="text-gray-500">+{connectedUsers.length - 5} more</span>
-            )}
-          </div>
-        </div>
-      </div>
-
+    <div className="flex flex-col h-full bg-white">
       {/* Messages Container */}
       <div className="flex-1 p-4 space-y-3 overflow-y-auto max-h-80">
         {messages.length === 0 ? (
@@ -359,7 +319,7 @@ const RealtimeChat: React.FC<RealtimeChatProps> = ({
                 <div className={getMessageStyle(message)}>
                   {message.type !== 'system' && message.userId !== currentUserId && (
                     <div className="text-xs font-semibold mb-1">
-                      {message.userName} {message.isTeacher && '👨‍🏫'}
+                      {message.userName}{message.isTeacher && ' 👨‍🏫'}
                     </div>
                   )}
                   <div className="break-words">{message.message}</div>
@@ -380,9 +340,9 @@ const RealtimeChat: React.FC<RealtimeChatProps> = ({
         {typingUsers.length > 0 && (
           <div className="flex items-center space-x-2 text-gray-500 text-sm">
             <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              <div key="dot1" className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+              <div key="dot2" className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+              <div key="dot3" className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
             </div>
             <span>{typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...</span>
           </div>

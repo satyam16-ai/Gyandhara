@@ -9,7 +9,6 @@ const {
   User, 
   ClassSession, 
   Stroke, 
-  AudioChunk, 
   ChatMessage, 
   SessionParticipant,
   Classroom,
@@ -50,15 +49,11 @@ async function cleanDatabase() {
     const deletedStrokes = await Stroke.deleteMany({});
     console.log(`✅ Removed ${deletedStrokes.deletedCount} strokes`);
 
-    // 4. Clear all audio chunks
-    const deletedAudio = await AudioChunk.deleteMany({});
-    console.log(`✅ Removed ${deletedAudio.deletedCount} audio chunks`);
-
-    // 5. Clear all chat messages
+    // 4. Clear all chat messages
     const deletedMessages = await ChatMessage.deleteMany({});
     console.log(`✅ Removed ${deletedMessages.deletedCount} chat messages`);
 
-    // 6. Clear all session participants
+    // 5. Clear all session participants
     const deletedParticipants = await SessionParticipant.deleteMany({});
     console.log(`✅ Removed ${deletedParticipants.deletedCount} session participants`);
 

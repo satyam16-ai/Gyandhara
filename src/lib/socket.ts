@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client'
-import { StrokeData, AudioChunk, ChatMessage } from '@/types'
+import { StrokeData, ChatMessage } from '@/types'
 
 class GyaandharaSocket {
   private socket: Socket | null = null
@@ -57,10 +57,6 @@ class GyaandharaSocket {
     this.socket?.emit('new-stroke', strokeData)
   }
 
-  sendAudioChunk(audioData: AudioChunk) {
-    this.socket?.emit('audio-chunk', audioData)
-  }
-
   clearWhiteboard() {
     this.socket?.emit('clear-whiteboard')
   }
@@ -98,10 +94,6 @@ class GyaandharaSocket {
 
   onStrokeUpdate(callback: (stroke: StrokeData) => void) {
     this.socket?.on('stroke-update', callback)
-  }
-
-  onAudioStream(callback: (audioData: AudioChunk) => void) {
-    this.socket?.on('audio-stream', callback)
   }
 
   onWhiteboardCleared(callback: () => void) {

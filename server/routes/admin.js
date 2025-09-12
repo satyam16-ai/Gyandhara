@@ -435,7 +435,6 @@ router.delete('/users/:id',
         const teacherSessions = await ClassSession.find({ teacherId: id })
         const sessionIds = teacherSessions.map(session => session._id)
         await Stroke.deleteMany({ sessionId: { $in: sessionIds } })
-        await AudioChunk.deleteMany({ sessionId: { $in: sessionIds } })
         await ChatMessage.deleteMany({ sessionId: { $in: sessionIds } })
       }
       

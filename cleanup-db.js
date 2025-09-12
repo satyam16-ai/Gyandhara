@@ -24,7 +24,7 @@ async function cleanDatabase() {
     
     // Drop other collections if they exist
     const collectionsToDelete = [
-      'classsessions', 'strokes', 'audiochunks', 'chatmessages',
+      'classsessions', 'strokes', 'chatmessages',
       'sessionparticipants', 'aicontents', 'roomclasses', 'rooms',
       'otps', 'adminsessions'
     ];

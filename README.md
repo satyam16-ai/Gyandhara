@@ -1,34 +1,34 @@
-# VoiceBoard - AI-Powered Low-Bandwidth Online Learning Platform
+# GYANDHARA - Low-Bandwidth Educational Platform
 
-🌍 **Bridging the digital divide in education through innovative technology**
+🌍 **Empowering Rural Education Through AI-Powered Technology**
 
-VoiceBoard is an AI-powered, low-bandwidth online learning platform designed specifically for rural students and areas with poor internet connectivity. Unlike traditional video-based solutions, VoiceBoard uses a unique combination of whiteboard drawing coordinates and compressed audio to deliver quality education with minimal data usage.
+GYANDHARA is a revolutionary low-bandwidth educational platform designed specifically for rural students and areas with limited internet connectivity. Using advanced whiteboard technology, real-time collaboration, and AI-powered features, GYANDHARA delivers quality education with minimal data usage.
 
 ## 🔑 Key Features
 
 ### 📊 Ultra-Low Bandwidth Usage
-- **100x less data** than traditional video conferencing
-- Works seamlessly on 2G networks
-- Intelligent compression algorithms
-- Adaptive quality based on network conditions
+- **Optimized for 2G/3G networks** - Works seamlessly even with poor connectivity  
+- **Smart compression** - Intelligent data reduction algorithms
+- **Adaptive quality** - Automatically adjusts based on network conditions
+- **Minimal data consumption** - Up to 90% less data usage than traditional platforms
 
 ### 🎨 Interactive Whiteboard
-- Real-time collaborative drawing
-- Teachers draw on digital canvas
-- Students see synchronized strokes
-- Multiple tools: pen, highlighter, eraser
+- **Real-time collaborative drawing** - Synchronized across all devices
+- **Multiple drawing tools** - Pen, highlighter, eraser, shapes, and images
+- **Paper-like experience** - Notebook, graph, and legal pad styles
+- **Multi-slide support** - Organized lesson structure
 
-### 🎤 High-Quality Audio
-- Opus codec compression
-- Real-time noise reduction
-- Clear voice transmission even on slow networks
-- Auto-gain control and echo cancellation
+### 💬 AI-Powered Communication
+- **Intelligent chat system** - Real-time messaging with smart features
+- **AI Doubt Solver** - Instant assistance in multiple languages
+- **Hand raising system** - Interactive classroom management
+- **Voice communication** - Crystal clear audio optimized for low bandwidth
 
-### 🤖 AI-Enhanced Learning
-- **Live Captions**: Real-time speech-to-text
-- **Auto Translation**: Support for 10+ Indian languages
-- **Smart Notes**: Auto-generated PDF notes from lessons
-- **Noise Reduction**: ML-powered audio cleanup
+### 🤖 Advanced AI Features
+- **Multi-language support** - Hindi, English, and 10+ Indian languages  
+- **Smart content generation** - AI-powered educational assistance
+- **Auto-translation** - Real-time language conversion
+- **Intelligent doubt solving** - Context-aware help system
 - **Learning Analytics**: Track student progress
 
 ### 💾 Offline-First Design
