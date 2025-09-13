@@ -100,7 +100,7 @@ export class UltraDrawingCompressor {
       // STEP 1: Serialize with optimal data structure
       const optimizedData = this.serializeOptimal(data)
       
-      // STEP 2: Binary pack with bit-level optimization
+      // STEP 2: ~with bit-level optimization
       const binaryPacked = this.binaryPack(optimizedData)
       
       // STEP 3: Deflate compression for maximum size reduction

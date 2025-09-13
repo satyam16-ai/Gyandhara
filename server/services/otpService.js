@@ -598,6 +598,218 @@ Your password has been reset by an administrator. Please login and change your p
     }
   }
 
+  // Send parent credentials via email when student is created
+  static async sendParentCredentialsEmail(email, parentData) {
+    try {
+      if (!emailTransporter) {
+        console.log(`📧 Parent Credentials Email (Development Mode) for ${email}:`)
+        console.log(`Parent Name: ${parentData.parentName}`)
+        console.log(`Student Name: ${parentData.studentName}`)
+        console.log(`Parent Username: ${parentData.username}`)
+        console.log(`Parent Password: ${parentData.tempPassword}`)
+        console.log(`Login URL: ${parentData.loginUrl}`)
+        return {
+          success: true,
+          messageId: 'dev-mode-parent-' + Date.now()
+        }
+      }
+
+      const htmlTemplate = this.getParentCredentialsTemplate(parentData)
+      
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || 'GYANDHARA <admin@gyandhara.edu>',
+        to: email,
+        subject: `GYANDHARA - Your Parent Portal Access for ${parentData.studentName}`,
+        html: htmlTemplate,
+        text: `Welcome to GYANDHARA! Your parent portal credentials: Username: ${parentData.username}, Password: ${parentData.tempPassword}. Monitor your child ${parentData.studentName}'s progress at: ${parentData.loginUrl}`
+      }
+
+      const info = await emailTransporter.sendMail(mailOptions)
+      console.log(`📧 Parent credentials email sent to ${email}:`, info.messageId)
+      
+      return {
+        success: true,
+        messageId: info.messageId
+      }
+    } catch (error) {
+      console.error('❌ Parent credentials email send failed:', error.message)
+      throw new Error('Failed to send parent credentials email: ' + error.message)
+    }
+  }
+
+  // Send parent credentials via SMS when student is created
+  static async sendParentCredentialsSMS(phone, parentData) {
+    try {
+      const { parentName, studentName, username, tempPassword, loginUrl } = parentData
+      
+      if (!twilioClient) {
+        console.log(`📱 Parent Credentials SMS (Development Mode) for ${phone}:`)
+        console.log(`Parent: ${parentName}`)
+        console.log(`Student: ${studentName}`)
+        console.log(`Username: ${username}`)
+        console.log(`Password: ${tempPassword}`)
+        console.log(`Portal: ${loginUrl}`)
+        return { success: true, message: 'Parent credentials logged to console (dev mode)' }
+      }
+
+      const message = await twilioClient.messages.create({
+        body: `Welcome to GYANDHARA, ${parentName}! Your Parent Portal access:
+Student: ${studentName}
+Username: ${username}
+Password: ${tempPassword}
+Portal: ${loginUrl}
+
+Monitor your child's progress. Change password after first login.`,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: phone
+      })
+
+      return { 
+        success: true, 
+        message: 'Parent credentials SMS sent successfully',
+        sid: message.sid 
+      }
+    } catch (error) {
+      console.error('❌ Parent credentials SMS sending error:', error)
+      
+      // Handle Twilio trial account limitations gracefully
+      if (error.code === 21608) {
+        console.log(`📱 [TRIAL ACCOUNT] Parent Credentials SMS for ${phone}:`)
+        console.log(`Parent: ${parentName}`)
+        console.log(`Student: ${studentName}`)
+        console.log(`Username: ${username}`)
+        console.log(`Password: ${tempPassword}`)
+        console.log(`Portal: ${loginUrl}`)
+        console.log(`⚠️  To send SMS to this number, verify it at: https://twilio.com/user/account/phone-numbers/verified`)
+        
+        return { 
+          success: true, 
+          message: 'Parent credentials logged (Trial account - number needs verification)',
+          trialAccountLimitation: true,
+          verificationUrl: 'https://twilio.com/user/account/phone-numbers/verified'
+        }
+      }
+      
+      // For other errors, fall back to console logging
+      console.log(`📱 [FALLBACK] Parent Credentials SMS for ${phone}:`)
+      console.log(`Parent: ${parentName}`)
+      console.log(`Student: ${studentName}`)
+      console.log(`Username: ${username}`)
+      console.log(`Password: ${tempPassword}`)
+      console.log(`Portal: ${loginUrl}`)
+      
+      return { 
+        success: true, 
+        message: 'Parent credentials logged (SMS service unavailable)',
+        fallback: true
+      }
+    }
+  }
+
+  // Email template for parent credentials
+  static getParentCredentialsTemplate(parentData) {
+    const { parentName, studentName, username, tempPassword, loginUrl } = parentData
+    
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+            .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            .header { text-align: center; margin-bottom: 30px; background: linear-gradient(135deg, #ff6b6b, #4ecdc4); color: white; padding: 30px; border-radius: 8px; }
+            .logo { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
+            .credentials-box { background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; padding: 20px; margin: 20px 0; }
+            .credential-row { display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: white; border-radius: 4px; }
+            .credential-label { font-weight: bold; color: #374151; }
+            .credential-value { font-family: monospace; color: #059669; }
+            .student-info { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; }
+            .login-button { display: inline-block; background: #22c55e; color: white; text-decoration: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; margin: 20px 0; }
+            .features { background: #fef7ff; border-left: 4px solid #a855f7; padding: 15px; margin: 20px 0; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280; text-align: center; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">🌟 GYANDHARA</div>
+                <h2>Your Parent Portal Access</h2>
+                <p>Monitor Your Child's Learning Journey</p>
+            </div>
+            
+            <p>Dear <strong>${parentName}</strong>,</p>
+            <p>Welcome to GYANDHARA! Your child <strong>${studentName}</strong> has been enrolled in our AI-powered educational platform. We've created a special Parent Portal for you to monitor their progress.</p>
+            
+            <div class="student-info">
+                <h4 style="margin-top: 0; color: #1f2937;">👨‍🎓 Student Information</h4>
+                <p><strong>Student Name:</strong> ${studentName}</p>
+                <p><strong>Enrollment Status:</strong> Active</p>
+                <p><strong>Platform:</strong> GYANDHARA Educational Platform</p>
+            </div>
+            
+            <div class="credentials-box">
+                <h3 style="margin-top: 0; color: #1f2937;">🔐 Your Parent Portal Login</h3>
+                <div class="credential-row">
+                    <span class="credential-label">Username:</span>
+                    <span class="credential-value">${username}</span>
+                </div>
+                <div class="credential-row">
+                    <span class="credential-label">Temporary Password:</span>
+                    <span class="credential-value">${tempPassword}</span>
+                </div>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="${loginUrl}" class="login-button">Access Parent Portal</a>
+            </div>
+            
+            <div class="features">
+                <h4 style="margin-top: 0; color: #7c2d12;">📊 What You Can Do in Parent Portal:</h4>
+                <ul>
+                    <li><strong>Progress Tracking:</strong> Monitor your child's academic progress and achievements</li>
+                    <li><strong>Attendance Records:</strong> View class attendance and participation statistics</li>
+                    <li><strong>Performance Analytics:</strong> See detailed reports on learning outcomes</li>
+                    <li><strong>Communication:</strong> Receive updates and communicate with teachers</li>
+                    <li><strong>Schedule Overview:</strong> View upcoming classes and important dates</li>
+                    <li><strong>Skill Development:</strong> Track learning milestones and skill improvements</li>
+                </ul>
+            </div>
+            
+            <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0;">
+                <h4 style="margin-top: 0; color: #dc2626;">🔒 Important Security Steps:</h4>
+                <ul>
+                    <li><strong>Change your password</strong> immediately after first login</li>
+                    <li><strong>Keep credentials secure</strong> and don't share with others</li>
+                    <li><strong>Use a strong password</strong> with uppercase, lowercase, numbers, and symbols</li>
+                    <li><strong>Regular monitoring</strong> helps support your child's learning journey</li>
+                </ul>
+            </div>
+            
+            <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
+                <h4 style="margin-top: 0; color: #1e40af;">💡 Pro Tips for Parents:</h4>
+                <ul>
+                    <li>Check the portal weekly to stay updated on progress</li>
+                    <li>Encourage your child based on their achievements shown in reports</li>
+                    <li>Use the communication features to stay connected with teachers</li>
+                    <li>Set up a regular schedule to review learning analytics together</li>
+                </ul>
+            </div>
+            
+            <p>For technical support or questions about your child's education, please contact our support team.</p>
+            
+            <div class="footer">
+                <p><strong>GYANDHARA Team</strong></p>
+                <p>Empowering Rural Education with AI Technology</p>
+                <p>This is an automated message. Please do not reply to this email.</p>
+                <p>For support: support@gyandhara.edu</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    `
+  }
+
   // Test OTP sending (for development)
   static async testOTPDelivery(email, phoneNumber) {
     const testOTP = this.generateOTP()

@@ -1,7 +1,7 @@
 const express = require('express')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-const { User } = require('../models')
+const { User, Parent } = require('../models')
 const config = require('../config')
 
 const router = express.Router()
@@ -172,7 +172,7 @@ router.get('/users', async (req, res) => {
 // Create user
 router.post('/users', async (req, res) => {
   try {
-    const { name, email, mobile, role = 'student' } = req.body
+    const { name, email, mobile, role = 'student', parentName, parentEmail, parentMobile, relationship = 'parent' } = req.body
 
     // Validate required fields
     if (!name || !email || !mobile) {
@@ -191,11 +191,34 @@ router.post('/users', async (req, res) => {
       return res.status(400).json({ error: 'User with this mobile number already exists' })
     }
 
-    // Generate temporary password and username
+    // For students, validate parent details if provided
+    let parentUser = null
+    if (role === 'student' && (parentName || parentEmail || parentMobile)) {
+      if (!parentName || !parentEmail || !parentMobile) {
+        return res.status(400).json({ 
+          error: 'When creating a student with parent details, parent name, email, and mobile are all required' 
+        })
+      }
+
+      // Check if parent email already exists
+      const existingParentByEmail = await User.findOne({ email: parentEmail.toLowerCase() })
+      if (existingParentByEmail) {
+        return res.status(400).json({ error: 'Parent with this email already exists' })
+      }
+
+      // Check if parent mobile already exists
+      const existingParentByMobile = await User.findOne({ 'profile.phone': parentMobile })
+      if (existingParentByMobile) {
+        return res.status(400).json({ error: 'Parent with this mobile number already exists' })
+      }
+    }
+
+    // Generate temporary password and username for student
     const tempPassword = Math.random().toString(36).slice(-8) + '!'
     const hashedPassword = await bcrypt.hash(tempPassword, 12)
     const username = email.split('@')[0].toLowerCase() + Math.random().toString(36).substr(2, 3)
 
+    // Create student user
     const user = new User({
       name,
       email: email.toLowerCase(),
@@ -211,6 +234,54 @@ router.post('/users', async (req, res) => {
 
     await user.save()
 
+    // If creating a student and parent details are provided, create parent account
+    if (role === 'student' && parentName && parentEmail && parentMobile) {
+      try {
+        // Generate parent credentials
+        const parentTempPassword = Math.random().toString(36).slice(-8) + '!'
+        const parentHashedPassword = await bcrypt.hash(parentTempPassword, 12)
+        const parentUsername = parentEmail.split('@')[0].toLowerCase() + Math.random().toString(36).substr(2, 3)
+
+        // Create parent user
+        parentUser = new User({
+          name: parentName,
+          email: parentEmail.toLowerCase(),
+          username: parentUsername,
+          passwordHash: parentHashedPassword,
+          role: 'parent',
+          isActive: true,
+          profile: {
+            phone: parentMobile
+          },
+          createdAt: new Date()
+        })
+
+        await parentUser.save()
+
+        // Create parent-student relationship
+        const parentRelationship = new Parent({
+          parentId: parentUser._id,
+          studentId: user._id,
+          relationship: relationship,
+          permissions: {
+            viewProgress: true,
+            viewAttendance: true,
+            receiveNotifications: true,
+            communicateWithTeachers: true
+          },
+          isActive: true,
+          createdBy: req.admin._id
+        })
+
+        await parentRelationship.save()
+
+        console.log(`👨‍👩‍👧‍👦 Parent account created for student: ${parentUser.email}`)
+      } catch (parentError) {
+        console.error('❌ Parent account creation failed:', parentError.message)
+        // Don't fail the entire operation if parent creation fails
+      }
+    }
+
     // Send welcome notifications via both email and SMS
     try {
       const OTPService = require('../services/otpService')
@@ -224,7 +295,7 @@ router.post('/users', async (req, res) => {
         loginUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`
       }
 
-      // Send welcome email
+      // Send welcome email to student
       let emailResult = null
       try {
         await OTPService.sendWelcomeEmail(email, userData)
@@ -235,7 +306,7 @@ router.post('/users', async (req, res) => {
         emailResult = { success: false, message: emailError.message }
       }
 
-      // Send SMS with credentials
+      // Send SMS with credentials to student
       let smsResult = null
       if (mobile) {
         try {
@@ -259,9 +330,56 @@ router.post('/users', async (req, res) => {
         }
       }
 
-      res.json({
+      // Send parent notifications if parent was created
+      let parentNotifications = null
+      if (parentUser) {
+        try {
+          const parentNotificationData = {
+            parentName: parentUser.name,
+            studentName: name,
+            username: parentUser.username,
+            tempPassword: parentTempPassword,
+            loginUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`
+          }
+
+          // Send parent credentials email
+          let parentEmailResult = null
+          try {
+            await OTPService.sendParentCredentialsEmail(parentUser.email, parentNotificationData)
+            console.log(`📧 Parent credentials email sent to ${parentUser.email}`)
+            parentEmailResult = { success: true, message: 'Parent email sent successfully' }
+          } catch (parentEmailError) {
+            console.error('❌ Parent email sending failed:', parentEmailError.message)
+            parentEmailResult = { success: false, message: parentEmailError.message }
+          }
+
+          // Send parent SMS
+          let parentSmsResult = null
+          if (parentMobile) {
+            try {
+              parentSmsResult = await OTPService.sendParentCredentialsSMS(parentMobile, parentNotificationData)
+              console.log(`📱 Parent credentials SMS sent to ${parentMobile}`)
+            } catch (parentSmsError) {
+              console.error('❌ Parent SMS sending failed:', parentSmsError.message)
+              parentSmsResult = { success: false, message: parentSmsError.message }
+            }
+          }
+
+          parentNotifications = {
+            email: parentEmailResult,
+            sms: parentSmsResult
+          }
+        } catch (parentNotificationError) {
+          console.error('❌ Parent notification failed:', parentNotificationError.message)
+          parentNotifications = { error: parentNotificationError.message }
+        }
+      }
+
+      const response = {
         success: true,
-        message: 'User created successfully!',
+        message: role === 'student' && parentUser ? 
+          'Student and parent accounts created successfully!' : 
+          'User created successfully!',
         user: {
           id: user._id,
           name: user.name,
@@ -271,15 +389,33 @@ router.post('/users', async (req, res) => {
           role: user.role
         },
         notifications: {
-          email: emailResult,
-          sms: smsResult
+          student: {
+            email: emailResult,
+            sms: smsResult
+          }
         }
-      })
+      }
+
+      // Add parent info to response if parent was created
+      if (parentUser) {
+        response.parent = {
+          id: parentUser._id,
+          name: parentUser.name,
+          email: parentUser.email,
+          mobile: parentUser.profile.phone,
+          username: parentUser.username,
+          role: parentUser.role,
+          relationship: relationship
+        }
+        response.notifications.parent = parentNotifications
+      }
+
+      res.json(response)
     } catch (notificationError) {
       console.error('❌ Notification failed:', notificationError.message)
       
       // User creation succeeded, but notifications failed
-      res.json({
+      const response = {
         success: true,
         message: 'User created successfully, but notification delivery failed',
         user: {
@@ -292,7 +428,23 @@ router.post('/users', async (req, res) => {
           tempPassword // Provide credentials for manual delivery
         },
         warning: 'Email/SMS delivery failed - please provide credentials manually'
-      })
+      }
+
+      // Add parent info if created
+      if (parentUser) {
+        response.parent = {
+          id: parentUser._id,
+          name: parentUser.name,
+          email: parentUser.email,
+          mobile: parentUser.profile.phone,
+          username: parentUser.username,
+          role: parentUser.role,
+          tempPassword: parentTempPassword,
+          relationship: relationship
+        }
+      }
+
+      res.json(response)
     }
   } catch (error) {
     console.error('Create user error:', error)

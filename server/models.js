@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true,
-    enum: ['teacher', 'student', 'admin']
+    enum: ['teacher', 'student', 'admin', 'parent']
   },
   isActive: {
     type: Boolean,
@@ -93,6 +93,185 @@ const userSchema = new mongoose.Schema({
 userSchema.virtual('isLocked').get(function() {
   return !!(this.lockUntil && this.lockUntil > Date.now())
 })
+
+// Parent Schema - Relationship between parents and students
+const parentSchema = new mongoose.Schema({
+  parentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  studentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  relationship: {
+    type: String,
+    enum: ['father', 'mother', 'guardian', 'relative'],
+    default: 'parent'
+  },
+  permissions: {
+    viewProgress: {
+      type: Boolean,
+      default: true
+    },
+    viewAttendance: {
+      type: Boolean,
+      default: true
+    },
+    receiveNotifications: {
+      type: Boolean,
+      default: true
+    },
+    communicateWithTeachers: {
+      type: Boolean,
+      default: true
+    }
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User' // Admin who created this relationship
+  }
+}, {
+  timestamps: true
+})
+
+// Parent-Student Progress Tracking
+const studentProgressSchema = new mongoose.Schema({
+  studentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  classroomId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Classroom',
+    required: true
+  },
+  date: {
+    type: Date,
+    required: true,
+    default: Date.now
+  },
+  attendance: {
+    present: {
+      type: Boolean,
+      default: false
+    },
+    duration: {
+      type: Number, // Minutes attended
+      default: 0
+    },
+    joinTime: Date,
+    leaveTime: Date
+  },
+  participation: {
+    questionsAsked: {
+      type: Number,
+      default: 0
+    },
+    handsRaised: {
+      type: Number,
+      default: 0
+    },
+    chatMessages: {
+      type: Number,
+      default: 0
+    },
+    whiteboardInteractions: {
+      type: Number,
+      default: 0
+    }
+  },
+  performance: {
+    quizScore: Number,
+    assignmentScore: Number,
+    behaviorRating: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: 5
+    }
+  },
+  notes: {
+    teacherNotes: String,
+    parentNotes: String
+  }
+}, {
+  timestamps: true
+})
+
+// Parent Communication Schema
+const parentCommunicationSchema = new mongoose.Schema({
+  parentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  teacherId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  studentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  subject: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  message: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  messageType: {
+    type: String,
+    enum: ['inquiry', 'concern', 'feedback', 'meeting_request'],
+    default: 'inquiry'
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'read', 'replied', 'resolved'],
+    default: 'pending'
+  },
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'urgent'],
+    default: 'medium'
+  },
+  replies: [{
+    senderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    message: {
+      type: String,
+      required: true
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    }
+  }]
+}, {
+  timestamps: true
+})
+
+// Ensure unique parent-student relationship
+parentSchema.index({ parentId: 1, studentId: 1 }, { unique: true })
+studentProgressSchema.index({ studentId: 1, classroomId: 1, date: 1 })
+parentCommunicationSchema.index({ parentId: 1, status: 1 })
+parentCommunicationSchema.index({ teacherId: 1, status: 1 })
 
 // Class Session Schema (Room System)
 const classSessionSchema = new mongoose.Schema({
@@ -854,5 +1033,8 @@ module.exports = {
   AIContent: mongoose.model('AIContent', aiContentSchema),
   OTP: mongoose.model('OTP', otpSchema),
   AdminSession: mongoose.model('AdminSession', adminSessionSchema),
-  Slide: mongoose.model('Slide', slideSchema)
+  Slide: mongoose.model('Slide', slideSchema),
+  Parent: mongoose.model('Parent', parentSchema),
+  StudentProgress: mongoose.model('StudentProgress', studentProgressSchema),
+  ParentCommunication: mongoose.model('ParentCommunication', parentCommunicationSchema)
 }

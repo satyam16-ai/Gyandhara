@@ -39,7 +39,11 @@ export default function AdminDashboard() {
     name: '',
     email: '',
     mobile: '',
-    role: 'student'
+    role: 'student',
+    parentName: '',
+    parentEmail: '',
+    parentMobile: '',
+    relationship: 'parent'
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -126,8 +130,23 @@ export default function AdminDashboard() {
       const data = await response.json()
 
       if (response.ok) {
-        setSuccess(`User created successfully! Username: ${data.user.username}`)
-        setNewUser({ username: '', name: '', email: '', mobile: '', role: 'student' })
+        let successMessage = `User created successfully! Username: ${data.user.username}`
+        if (data.parent) {
+          successMessage += `\nParent account also created! Username: ${data.parent.username}`
+          successMessage += `\nCredentials sent to both student and parent via email/SMS.`
+        }
+        setSuccess(successMessage)
+        setNewUser({ 
+          username: '', 
+          name: '', 
+          email: '', 
+          mobile: '', 
+          role: 'student',
+          parentName: '',
+          parentEmail: '',
+          parentMobile: '',
+          relationship: 'parent'
+        })
         setShowCreateUser(false)
         loadDashboardData()
       } else {
@@ -651,6 +670,89 @@ export default function AdminDashboard() {
                         <option value="admin">🔐 Admin</option>
                       </select>
                     </div>
+
+                    {/* Parent Details Section - Only show for students */}
+                    {newUser.role === 'student' && (
+                      <div className="border-t pt-4 mt-4">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                          👨‍👩‍👧‍👦 Parent/Guardian Information
+                        </h4>
+                        <p className="text-sm text-gray-600 mb-4">
+                          Parent account will be automatically created to monitor student progress.
+                        </p>
+                        
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium mb-2 text-gray-700">
+                              Parent/Guardian Name *
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Enter parent/guardian full name"
+                              value={newUser.parentName}
+                              onChange={(e) => setNewUser({...newUser, parentName: e.target.value})}
+                              className="w-full px-4 py-3 border rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+                              required={newUser.role === 'student'}
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium mb-2 text-gray-700">
+                              Parent Email Address *
+                            </label>
+                            <input
+                              type="email"
+                              placeholder="Enter parent email address"
+                              value={newUser.parentEmail}
+                              onChange={(e) => setNewUser({...newUser, parentEmail: e.target.value})}
+                              className="w-full px-4 py-3 border rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+                              required={newUser.role === 'student'}
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium mb-2 text-gray-700">
+                              Parent Mobile Number *
+                            </label>
+                            <input
+                              type="tel"
+                              placeholder="Enter parent mobile number (e.g., +1234567890)"
+                              value={newUser.parentMobile}
+                              onChange={(e) => setNewUser({...newUser, parentMobile: e.target.value})}
+                              className="w-full px-4 py-3 border rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+                              required={newUser.role === 'student'}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              📱 Parent will receive login credentials via email and SMS
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium mb-2 text-gray-700">
+                              Relationship to Student
+                            </label>
+                            <select
+                              value={newUser.relationship}
+                              onChange={(e) => setNewUser({ ...newUser, relationship: e.target.value })}
+                              className="w-full px-4 py-3 border rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-black"
+                            >
+                              <option value="parent">👨‍👩‍👧‍👦 Parent</option>
+                              <option value="guardian">🏠 Guardian</option>
+                              <option value="father">👨 Father</option>
+                              <option value="mother">👩 Mother</option>
+                              <option value="sibling">👫 Sibling</option>
+                              <option value="other">🤝 Other</option>
+                            </select>
+                          </div>
+                        </div>
+                        
+                        <div className="p-4 rounded-lg bg-green-50 mt-4">
+                          <p className="text-sm text-green-700">
+                            🎯 <strong>Parent Portal Features:</strong> Progress tracking, attendance monitoring, teacher communication, and real-time notifications.
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="p-4 rounded-lg bg-blue-50">
                       <p className="text-sm text-blue-700">
