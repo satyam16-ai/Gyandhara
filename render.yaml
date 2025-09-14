@@ -3,6 +3,8 @@ services:
     name: gyandhara-backend
     env: node
     plan: free
+    repo: https://github.com/satyam16-ai/voiceboard-educational-platform
+    branch: main
     rootDir: server
     buildCommand: npm install
     startCommand: node index.js

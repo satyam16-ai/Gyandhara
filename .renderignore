@@ -1,0 +1,9 @@
+# Render deployment configuration
+# Force deployment from main branch
+# Updated: 2025-09-15
+
+# Files to ignore during deployment
+node_modules/
+*.log
+.env.local
+.env.development
