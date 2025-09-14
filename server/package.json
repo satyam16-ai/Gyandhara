@@ -1,0 +1,39 @@
+{
+  "name": "gyandhara-backend",
+  "version": "2.0.0",
+  "description": "Backend server for Gyandhara Educational Platform",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "init-admin": "node scripts/initAdmin.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.5",
+    "cors": "^2.8.5",
+    "mongoose": "^8.0.3",
+    "helmet": "^7.1.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.2",
+    "dotenv": "^16.3.1",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "compression": "^1.7.4",
+    "nodemailer": "^6.9.7",
+    "twilio": "^4.19.0",
+    "@faker-js/faker": "^5.5.3",
+    "node-opus": "^0.3.3",
+    "rough-js": "^4.5.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "author": "VoiceBoard Team",
+  "license": "MIT"
+}

@@ -7,7 +7,7 @@
  * STEP 3: Deflate → Maximum size reduction
  */
 
-import * as pako from 'pako'
+import pako from 'pako'
 
 // Optimized tool codes (4 bits only)
 export const TOOL_CODES = {
