@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchFromBackend } from '../../../utils/backend'
 
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
     
-    // Forward the request to the backend server
-    const backendUrl = 'http://localhost:8080/api/admin-secure/dashboard/stats'
-    
-    const response = await fetch(backendUrl, {
+    const response = await fetchFromBackend('/api/admin-secure/dashboard/stats', {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         ...(authHeader && { 'Authorization': authHeader }),
       },
     })

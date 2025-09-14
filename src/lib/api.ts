@@ -1,6 +1,6 @@
 // API service for Gyaandhara with MongoDB backend
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gyandhara-backend.onrender.com'
 
 // API utility functions
 class GyaandharaAPI {

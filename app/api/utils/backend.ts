@@ -1,14 +1,21 @@
 // Utility function to get the backend URL
 export function getBackendUrl(): string {
-  return process.env.BACKEND_URL || 
-         process.env.NEXT_PUBLIC_BACKEND_URL || 
-         'http://localhost:8080'
+  const backendUrl = process.env.BACKEND_URL || 
+                    process.env.NEXT_PUBLIC_BACKEND_URL || 
+                    'https://gyandhara-backend.onrender.com'
+  
+  // Remove trailing slash if present
+  return backendUrl.replace(/\/$/, '')
 }
 
 // Helper function to make API calls to backend
 export async function fetchFromBackend(endpoint: string, options: RequestInit = {}) {
   const baseUrl = getBackendUrl()
-  const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`
+  // Ensure endpoint starts with /
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+  const url = `${baseUrl}${cleanEndpoint}`
+  
+  console.log(`🔗 API Call: ${options.method || 'GET'} ${url}`)
   
   return fetch(url, {
     headers: {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchFromBackend } from '../../../utils/backend'
 
 export async function GET(
   request: NextRequest,
@@ -7,12 +8,8 @@ export async function GET(
   try {
     const { studentId } = await params
 
-    // Forward to backend API
-    const backendResponse = await fetch(`http://localhost:8080/api/classrooms/student/${studentId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const backendResponse = await fetchFromBackend(`/api/classrooms/student/${studentId}`, {
+      method: 'GET'
     })
 
     const data = await backendResponse.json()

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchFromBackend } from '../../../utils/backend'
 
 export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url)
     const format = url.searchParams.get('format') || 'json'
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/api/admin-simple/users/export?format=${format}`, {
+    const response = await fetchFromBackend(`/api/admin-simple/users/export?format=${format}`, {
       method: 'GET',
       headers: {
         'Authorization': request.headers.get('Authorization') || '',

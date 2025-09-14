@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchFromBackend } from '../../../utils/backend'
 
 export async function PUT(
   request: NextRequest,
@@ -9,13 +10,9 @@ export async function PUT(
     const body = await request.json()
     const { userId } = await params
     
-    // Forward the request to the backend server
-    const backendUrl = `http://localhost:8080/api/admin-secure/users/${userId}`
-    
-    const response = await fetch(backendUrl, {
+    const response = await fetchFromBackend(`/api/admin-secure/users/${userId}`, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json',
         ...(authHeader && { 'Authorization': authHeader }),
       },
       body: JSON.stringify(body),
@@ -41,13 +38,9 @@ export async function DELETE(
     const authHeader = request.headers.get('authorization')
     const { userId } = await params
     
-    // Forward the request to the backend server
-    const backendUrl = `http://localhost:8080/api/admin-secure/users/${userId}`
-    
-    const response = await fetch(backendUrl, {
+    const response = await fetchFromBackend(`/api/admin-secure/users/${userId}`, {
       method: 'DELETE',
       headers: {
-        'Content-Type': 'application/json',
         ...(authHeader && { 'Authorization': authHeader }),
       },
     })

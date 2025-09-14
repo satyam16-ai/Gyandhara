@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080'
+import { fetchFromBackend } from '../../../utils/backend'
 
 // POST /api/room-classes/[classId]/start - Start a live class
 export async function POST(
@@ -21,11 +20,8 @@ export async function POST(
       console.log('No JSON body provided, using empty object')
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/room-classes/${classId}/start`, {
+    const response = await fetchFromBackend(`/api/room-classes/${classId}/start`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(body),
     })
 

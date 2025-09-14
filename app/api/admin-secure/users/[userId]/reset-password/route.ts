@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchFromBackend } from '../../../../utils/backend'
 
 export async function POST(
   request: NextRequest,
@@ -8,13 +9,9 @@ export async function POST(
     const authHeader = request.headers.get('authorization')
     const { userId } = await params
     
-    // Forward the request to the backend server
-    const backendUrl = `http://localhost:8080/api/admin-secure/users/${userId}/reset-password`
-    
-    const response = await fetch(backendUrl, {
+    const response = await fetchFromBackend(`/api/admin-secure/users/${userId}/reset-password`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         ...(authHeader && { 'Authorization': authHeader }),
       },
     })

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080'
+import { fetchFromBackend } from '../utils/backend'
 
 // GET /api/room-classes?roomId=xyz - Get all classes for a room
 export async function GET(request: NextRequest) {
@@ -15,11 +14,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/room-classes/room/${roomId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const response = await fetchFromBackend(`/api/room-classes/room/${roomId}`, {
+      method: 'GET'
     })
 
     const data = await response.json()
@@ -38,11 +34,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    const response = await fetch(`${BACKEND_URL}/api/room-classes/create`, {
+    const response = await fetchFromBackend('/api/room-classes/create', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(body),
     })
 

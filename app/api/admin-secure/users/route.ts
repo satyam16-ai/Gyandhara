@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchFromBackend } from '../../utils/backend'
 
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
     const { searchParams } = new URL(request.url)
     
-    // Forward the request to the backend server
-    const backendUrl = `http://localhost:8080/api/admin-secure/users?${searchParams.toString()}`
-    
-    const response = await fetch(backendUrl, {
+    const response = await fetchFromBackend(`/api/admin-secure/users?${searchParams.toString()}`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         ...(authHeader && { 'Authorization': authHeader }),
       },
     })
@@ -33,13 +30,9 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization')
     const body = await request.json()
     
-    // Forward the request to the backend server
-    const backendUrl = 'http://localhost:8080/api/admin-secure/users'
-    
-    const response = await fetch(backendUrl, {
+    const response = await fetchFromBackend('/api/admin-secure/users', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         ...(authHeader && { 'Authorization': authHeader }),
       },
       body: JSON.stringify(body),

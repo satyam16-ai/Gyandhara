@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080'
+import { fetchFromBackend } from '../../utils/backend'
 
 // GET /api/student/attendance?userId=xyz - Get attendance data for a student
 export async function GET(request: NextRequest) {
@@ -15,11 +14,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/student/attendance/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const response = await fetchFromBackend(`/api/student/attendance/${userId}`, {
+      method: 'GET'
     })
 
     const data = await response.json()

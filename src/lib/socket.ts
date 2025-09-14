@@ -5,8 +5,8 @@ class GyaandharaSocket {
   private socket: Socket | null = null
   private serverUrl: string
   
-  constructor(serverUrl: string = 'http://localhost:3001') {
-    this.serverUrl = serverUrl
+  constructor(serverUrl?: string) {
+    this.serverUrl = serverUrl || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gyandhara-backend.onrender.com'
   }
 
   connect() {

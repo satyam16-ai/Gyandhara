@@ -11,13 +11,17 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     })
     
+    if (!response.ok) {
+      console.error(`❌ Backend responded with status: ${response.status}`)
+    }
+    
     const data = await response.json()
     
     return NextResponse.json(data, { status: response.status })
   } catch (error) {
     console.error('Login proxy error:', error)
     return NextResponse.json(
-      { error: 'Network error. Please try again.' },
+      { error: 'Network error connecting to backend. Please try again.' },
       { status: 500 }
     )
   }

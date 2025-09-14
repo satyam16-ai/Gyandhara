@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchFromBackend } from '../../../utils/backend'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/api/admin-simple/users/bulk-action`, {
+    const response = await fetchFromBackend('/api/admin-simple/users/bulk-action', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': request.headers.get('Authorization') || '',
       },
       body: JSON.stringify(body),

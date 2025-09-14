@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080'
+const BACKEND_URL = process.env.BACKEND_URL || 'https://gyandhara-backend.onrender.com'
 
 // GET /api/room-classes/[classId] - Get a specific class
 export async function GET(

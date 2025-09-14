@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchFromBackend } from '../../utils/backend'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    // Forward to backend API
-    const backendResponse = await fetch(`http://localhost:8080/api/classrooms/create`, {
+    const backendResponse = await fetchFromBackend('/api/classrooms/create', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(body)
     })
 

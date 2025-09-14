@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchFromBackend } from '../../../../utils/backend'
 
 export async function GET(
   request: NextRequest,
@@ -6,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { userId } = await params
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/api/admin-simple/users/${userId}/profile`, {
+    const response = await fetchFromBackend(`/api/admin-simple/users/${userId}/profile`, {
       method: 'GET',
       headers: {
         'Authorization': request.headers.get('Authorization') || '',

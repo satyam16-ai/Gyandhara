@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchFromBackend } from '../../../utils/backend'
 
 export async function POST(
   request: NextRequest,
@@ -8,12 +9,8 @@ export async function POST(
     const { classroomId } = await params
     const body = await request.json()
     
-    // Forward to backend API
-    const backendResponse = await fetch(`http://localhost:8080/api/classrooms/${classroomId}/lectures`, {
+    const backendResponse = await fetchFromBackend(`/api/classrooms/${classroomId}/lectures`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(body)
     })
 
@@ -41,14 +38,10 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     
-    const url = `http://localhost:8080/api/classrooms/${classroomId}/lectures${status ? `?status=${status}` : ''}`
+    const endpoint = `/api/classrooms/${classroomId}/lectures${status ? `?status=${status}` : ''}`
     
-    // Forward to backend API
-    const backendResponse = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
+    const backendResponse = await fetchFromBackend(endpoint, {
+      method: 'GET'
     })
 
     const data = await backendResponse.json()
