@@ -100,7 +100,10 @@
     "stream-browserify": "^3.0.0",
     "tailwindcss-animate": "^1.0.7",
     "twilio": "^5.8.2",
-    "ws": "^8.16.0"
+    "ws": "^8.16.0",
+    "autoprefixer": "^10.0.1",
+    "postcss": "^8",
+    "tailwindcss": "^3.3.0"
   },
   "devDependencies": {
     "@types/msgpack5": "^3.4.6",
@@ -109,14 +112,11 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/ws": "^8.5.10",
-    "autoprefixer": "^10.0.1",
     "concurrently": "^8.2.2",
     "eslint": "^8",
     "eslint-config-next": "15.0.4",
     "newman": "^6.2.1",
     "nodemon": "^3.1.10",
-    "postcss": "^8",
-    "tailwindcss": "^3.3.0",
     "typescript": "^5"
   }
 }
