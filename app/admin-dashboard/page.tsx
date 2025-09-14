@@ -122,11 +122,60 @@ export default function AdminDashboard() {
     setError('')
     setSuccess('')
 
+    // Client-side validation
+    if (!newUser.name?.trim()) {
+      setError('Name is required')
+      return
+    }
+    if (!newUser.email?.trim()) {
+      setError('Email is required')
+      return
+    }
+    if (!newUser.mobile?.trim()) {
+      setError('Mobile number is required')
+      return
+    }
+    
+    // For students, validate parent details if any parent field is filled
+    if (newUser.role === 'student') {
+      const hasAnyParentField = newUser.parentName?.trim() || newUser.parentEmail?.trim() || newUser.parentMobile?.trim()
+      if (hasAnyParentField) {
+        if (!newUser.parentName?.trim()) {
+          setError('Parent name is required when creating parent account')
+          return
+        }
+        if (!newUser.parentEmail?.trim()) {
+          setError('Parent email is required when creating parent account')
+          return
+        }
+        if (!newUser.parentMobile?.trim()) {
+          setError('Parent mobile number is required when creating parent account')
+          return
+        }
+      }
+    }
+
+    // Sanitize the data before sending
+    const userData = {
+      name: newUser.name.trim(),
+      email: newUser.email.trim().toLowerCase(),
+      mobile: newUser.mobile.trim(),
+      role: newUser.role,
+      ...(newUser.role === 'student' && newUser.parentName?.trim() && {
+        parentName: newUser.parentName.trim(),
+        parentEmail: newUser.parentEmail?.trim().toLowerCase(),
+        parentMobile: newUser.parentMobile?.trim(),
+        relationship: newUser.relationship
+      })
+    }
+
+    console.log('Sending user data:', userData) // Debug log
+
     try {
       const response = await fetch('/api/admin-secure/users', {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify(newUser)
+        body: JSON.stringify(userData)
       })
 
       const data = await response.json()
