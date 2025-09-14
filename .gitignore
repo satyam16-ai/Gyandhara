@@ -56,6 +56,11 @@ aws-credentials.json
 
 # Google Service Account Keys
 *.json
+# Exception for configuration files
+!vercel.json
+!package.json
+!package-lock.json
+!tsconfig.json
 service-account-key.json
 google-credentials.json
 firebase-key.json
