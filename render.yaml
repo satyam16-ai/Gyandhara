@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: gyandhara-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        value: mongodb+srv://satyam_ai:satyamtiwari01@gyandhara.ordgmuf.mongodb.net/gyaandhara?retryWrites=true&w=majority&appName=GYANDHARA
+      - key: FRONTEND_URL
+        value: https://gyandhara-n1arsqflk-nitin8360s-projects.vercel.app
+      - key: JWT_SECRET
+        value: gyandhara-super-secure-jwt-production-key-2025
+      - key: BCRYPT_SALT_ROUNDS
+        value: 12
+      - key: GEMINI_API_KEY
+        value: AIzaSyAnpgC4ow_OJ2aW_jNffF54ZMAkJpBjESI
+      - key: ENABLE_AI_FEATURES
+        value: "true"
+      - key: ENABLE_EMAIL_NOTIFICATIONS
+        value: "true"
+      - key: ENABLE_COMPRESSION
+        value: "true"
+      - key: MAX_PARTICIPANTS_PER_SESSION
+        value: 50
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 200

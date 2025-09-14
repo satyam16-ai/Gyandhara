@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchFromBackend } from '../../utils/backend'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
     // Forward the request to the backend server
-    const backendUrl = 'http://localhost:8080/api/admin-secure/login'
-    
-    const response = await fetch(backendUrl, {
+    const response = await fetchFromBackend('/api/admin-secure/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(body),
     })
     

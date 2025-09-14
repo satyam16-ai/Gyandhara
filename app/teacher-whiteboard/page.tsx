@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { WhiteboardProvider } from '../../src/contexts/WhiteboardContext'
 import FullWhiteBoard from '../../src/components/FullWhiteBoard'
@@ -16,7 +16,7 @@ interface TeacherWhiteboardPageProps {
   }
 }
 
-export default function TeacherWhiteboardPage() {
+function TeacherWhiteboardContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
@@ -132,5 +132,22 @@ export default function TeacherWhiteboardPage() {
         />
       </WhiteboardProvider>
     </div>
+  )
+}
+
+export default function TeacherWhiteboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center p-8 bg-white rounded-xl shadow-xl">
+          <div className="relative mx-auto mb-6">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto"></div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Loading Whiteboard...</h2>
+        </div>
+      </div>
+    }>
+      <TeacherWhiteboardContent />
+    </Suspense>
   )
 }

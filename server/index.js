@@ -32,7 +32,9 @@ const allowedOrigins = config.IS_PRODUCTION
       'https://www.your-domain.com',
       'https://gyandhara-platform.herokuapp.com',
       'https://gyandhara-platform.vercel.app',
-      'https://gyandhara-platform.netlify.app'
+      'https://gyandhara-platform.netlify.app',
+      'https://gyandhara-n1arsqflk-nitin8360s-projects.vercel.app',
+      /\.vercel\.app$/
     ]
   : [
       'http://localhost:3000',
@@ -104,6 +106,15 @@ app.use('/api/auth', authRoutes)
 app.use('/api/room-classes', roomClassRoutes)
 
 // Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    service: 'Gyandhara Backend',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  })
+})
+
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
