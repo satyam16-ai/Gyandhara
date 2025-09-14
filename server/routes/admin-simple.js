@@ -172,7 +172,7 @@ router.get('/users', async (req, res) => {
 // Create user
 router.post('/users', async (req, res) => {
   try {
-    const { name, email, mobile, role = 'student', parentName, parentEmail, parentMobile, relationship = 'parent' } = req.body
+    const { name, email, mobile, role = 'student', parentName, parentEmail, parentMobile, relationship = 'guardian' } = req.body
 
     // Validate required fields
     if (!name || !email || !mobile) {
@@ -193,6 +193,7 @@ router.post('/users', async (req, res) => {
 
     // For students, validate parent details if provided
     let parentUser = null
+    let parentTempPassword = null // Declare in outer scope
     if (role === 'student' && (parentName || parentEmail || parentMobile)) {
       if (!parentName || !parentEmail || !parentMobile) {
         return res.status(400).json({ 
@@ -238,7 +239,7 @@ router.post('/users', async (req, res) => {
     if (role === 'student' && parentName && parentEmail && parentMobile) {
       try {
         // Generate parent credentials
-        const parentTempPassword = Math.random().toString(36).slice(-8) + '!'
+        parentTempPassword = Math.random().toString(36).slice(-8) + '!' // Use the outer scope variable
         const parentHashedPassword = await bcrypt.hash(parentTempPassword, 12)
         const parentUsername = parentEmail.split('@')[0].toLowerCase() + Math.random().toString(36).substr(2, 3)
 

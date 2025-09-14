@@ -125,7 +125,7 @@ export default function TeacherWhiteboardPage() {
           bandwidthMode={bandwidthMode}
           roomId={roomId || ''}
           classId={classId || ''}
-          userId={teacherId} // Pass actual teacher ID for WebRTC signaling
+          userId={teacherId || ''} // Pass actual teacher ID for WebRTC signaling
           userName={teacherName}
           lectureTitle={lectureTitle}
           subject={subject}

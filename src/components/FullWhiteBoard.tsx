@@ -49,7 +49,11 @@ import {
   ImagePlus,
   Grid3x3,
   FileImage,
-  Notebook
+  Notebook,
+  BarChart3,
+  Activity,
+  Zap,
+  Gauge
 } from 'lucide-react'
 
 interface DrawingElement {
@@ -191,6 +195,9 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
   
   // AI Doubt Solver state
   const [isAIDoubtVisible, setIsAIDoubtVisible] = useState(false)
+  
+  // Compression Stats state
+  const [showCompressionStats, setShowCompressionStats] = useState(false)
   
   // Slide system state
   const [slides, setSlides] = useState<Array<{id: string, elements: DrawingElement[], title: string}>>([
@@ -1575,11 +1582,21 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
   const handleEndClass = async () => {
     if (!isTeacher) return
     
+    // Get classId from props or localStorage
+    const currentClassId = classId || localStorage.getItem('currentClassId')
+    
+    if (!currentClassId) {
+      console.error('❌ No classId available to end class')
+      alert('❌ Unable to end class: Class ID not found. Please refresh and try again.')
+      return
+    }
+    
     const confirmEnd = window.confirm('Are you sure you want to end this class? All students will be redirected to their dashboard.')
     
     if (confirmEnd) {
       try {
-        const response = await fetch(`/api/room-classes/${classId}/end`, {
+        console.log('🛑 Ending class with ID:', currentClassId)
+        const response = await fetch(`/api/room-classes/${currentClassId}/end`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1591,20 +1608,28 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
         })
 
         if (response.ok) {
+          const result = await response.json()
+          console.log('✅ Class ended successfully:', result)
+          
           localStorage.removeItem('currentRoomId')
           localStorage.removeItem('currentClassId')
           localStorage.removeItem('currentClassroomId')
           localStorage.removeItem('currentLectureData')
           
+          alert('✅ Class ended successfully!')
           router.push('/teacher-dashboard')
         } else {
           const error = await response.json()
-          console.error('Error ending class:', error)
-          alert('❌ Failed to end class. Please try again.')
+          console.error('❌ Error ending class:', {
+            status: response.status,
+            statusText: response.statusText,
+            error
+          })
+          alert(`❌ Failed to end class: ${error.error || error.message || 'Unknown error'}. Please try again.`)
         }
       } catch (error) {
-        console.error('Error ending class:', error)
-        alert('❌ Network error. Please check your connection.')
+        console.error('❌ Network error ending class:', error)
+        alert('❌ Network error. Please check your connection and try again.')
       }
     }
   }
@@ -1701,6 +1726,22 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+  }
+
+  const getCompressionEfficiency = () => {
+    const ratio = compressionStats.compressionRatio
+    if (ratio >= 10) return { label: 'Excellent', color: 'text-green-600', bgColor: 'bg-green-100' }
+    if (ratio >= 5) return { label: 'Good', color: 'text-blue-600', bgColor: 'bg-blue-100' }
+    if (ratio >= 2) return { label: 'Fair', color: 'text-yellow-600', bgColor: 'bg-yellow-100' }
+    return { label: 'Low', color: 'text-red-600', bgColor: 'bg-red-100' }
+  }
+
   if (bandwidthMode === 'ultra-low') {
     return (
       <div className="h-full flex items-center justify-center bg-gray-100 rounded-lg">
@@ -1777,6 +1818,22 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
             >
               <Bot className="w-4 h-4" />
               <span>AI Help</span>
+            </button>
+            
+            {/* Compression Stats Button for All Users */}
+            <button
+              onClick={() => setShowCompressionStats(!showCompressionStats)}
+              className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+              title="Compression & Network Stats"
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Stats</span>
+              <span className="bg-green-300 text-green-800 text-xs px-2 py-1 rounded-full">
+                {compressionStats.compressionRatio > 0 ? 
+                  `${compressionStats.compressionRatio.toFixed(1)}x` : 
+                  '0x'
+                }
+              </span>
             </button>
             
             {isTeacher && (
@@ -2548,6 +2605,152 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                 canvasRef={canvasRef}
                 isStudent={!isTeacher}
               />
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Compression Stats Modal */}
+      {showCompressionStats && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl m-4">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white p-4 rounded-t-lg flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <BarChart3 className="w-6 h-6" />
+                <h3 className="text-lg font-semibold">Real-time Compression & Network Stats</h3>
+                <span className="text-green-200 text-sm">
+                  {isTeacher ? 'Teacher Compression Analytics' : 'Student Decompression Analytics'}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowCompressionStats(false)}
+                className="text-white hover:text-green-200 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
+              {/* Overview Cards */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-4 rounded-lg">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Zap className="w-5 h-5 text-blue-600" />
+                    <h4 className="font-semibold text-blue-800 dark:text-blue-200">Compression Ratio</h4>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                    {compressionStats.compressionRatio > 0 ? 
+                      `${compressionStats.compressionRatio.toFixed(1)}:1` : 
+                      'N/A'
+                    }
+                  </div>
+                  <div className={`text-sm px-2 py-1 rounded-full inline-block mt-2 ${getCompressionEfficiency().bgColor} ${getCompressionEfficiency().color}`}>
+                    {getCompressionEfficiency().label}
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 p-4 rounded-lg">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Activity className="w-5 h-5 text-green-600" />
+                    <h4 className="font-semibold text-green-800 dark:text-green-200">Data Saved</h4>
+                  </div>
+                  <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+                    {compressionStats.originalSize > compressionStats.compressedSize ? 
+                      formatBytes(compressionStats.originalSize - compressionStats.compressedSize) :
+                      '0 B'
+                    }
+                  </div>
+                  <div className="text-sm text-green-600 dark:text-green-400">
+                    Bandwidth saved
+                  </div>
+                </div>
+              </div>
+
+              {/* Detailed Stats */}
+              <div className="space-y-4">
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center">
+                    <Gauge className="w-5 h-5 mr-2" />
+                    Data Transfer Statistics
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Original Size</div>
+                      <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        {formatBytes(compressionStats.originalSize)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Compressed Size</div>
+                      <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        {formatBytes(compressionStats.compressedSize)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Packets/Second</div>
+                      <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        {compressionStats.packetsPerSecond.toFixed(1)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Efficiency</div>
+                      <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                        {compressionStats.originalSize > 0 ? 
+                          `${(100 - (compressionStats.compressedSize / compressionStats.originalSize * 100)).toFixed(1)}%` :
+                          '0%'
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Role-specific Information */}
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900 dark:to-purple-900 p-4 rounded-lg">
+                  <h4 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">
+                    {isTeacher ? '👨‍🏫 Teacher Mode' : '👨‍🎓 Student Mode'}
+                  </h4>
+                  <div className="text-sm text-indigo-700 dark:text-indigo-300">
+                    {isTeacher ? (
+                      <>
+                        <p className="mb-2">• Your drawing data is being compressed in real-time before sending to students</p>
+                        <p className="mb-2">• Higher compression ratios mean better performance for students</p>
+                        <p>• Ideal ratio: 5:1 or higher for smooth real-time collaboration</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="mb-2">• You're receiving compressed drawing data from the teacher</p>
+                        <p className="mb-2">• Data is automatically decompressed for smooth whiteboard experience</p>
+                        <p>• Better compression = faster loading and smoother drawing sync</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Connection Quality Indicator */}
+                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                    <span className="font-medium text-gray-800 dark:text-gray-200">
+                      Connection Status: {isConnected ? 'Connected' : 'Disconnected'}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Network: {bandwidthMode.toUpperCase()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowCompressionStats(false)}
+                  className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors hover:from-green-600 hover:to-blue-700"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

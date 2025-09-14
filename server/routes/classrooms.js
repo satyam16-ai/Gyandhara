@@ -63,11 +63,45 @@ router.get('/teacher/:teacherId', async (req, res) => {
     const { teacherId } = req.params
     const classrooms = await Classroom.find({ teacherId }).sort({ createdAt: -1 })
 
-    // Get lectures for each classroom
+    // Get lectures for each classroom and calculate real-time stats
     const classroomsWithLectures = await Promise.all(
       classrooms.map(async (classroom) => {
         const lectures = await RoomClass.find({ classroomId: classroom._id }).sort({ lectureNumber: 1 })
-        return { ...classroom.toObject(), lectures }
+        
+        // Calculate real-time stats
+        const totalStudents = classroom.enrolledStudents.length
+        const totalLectures = lectures.length
+        const totalHours = lectures.reduce((sum, lecture) => {
+          if (lecture.startTime && lecture.endTime) {
+            const durationMs = new Date(lecture.endTime) - new Date(lecture.startTime)
+            return sum + (durationMs / (1000 * 60 * 60)) // Convert to hours
+          }
+          return sum
+        }, 0)
+        
+        // Calculate average attendance
+        let averageAttendance = 0
+        if (totalLectures > 0 && totalStudents > 0) {
+          const totalPossibleAttendances = totalStudents * totalLectures
+          const actualAttendances = lectures.reduce((sum, lecture) => {
+            return sum + (lecture.attendees ? lecture.attendees.length : 0)
+          }, 0)
+          averageAttendance = totalPossibleAttendances > 0 ? (actualAttendances / totalPossibleAttendances) * 100 : 0
+        }
+        
+        // Update classroom object with calculated stats
+        const classroomWithStats = {
+          ...classroom.toObject(),
+          lectures,
+          stats: {
+            totalStudents,
+            totalLectures,
+            totalHours: Math.round(totalHours * 100) / 100, // Round to 2 decimal places
+            averageAttendance: Math.round(averageAttendance * 100) / 100
+          }
+        }
+        
+        return classroomWithStats
       })
     )
 

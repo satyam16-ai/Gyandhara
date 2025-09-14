@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from '../contexts/ThemeContext'
+import ThemeToggle from './ThemeToggle'
 import { 
   BookOpen, 
   Users, 
@@ -92,6 +94,7 @@ interface NewTeacherDashboardProps {
 }
 
 export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) {
+  const { isDarkMode } = useTheme()
   const [activeTab, setActiveTab] = useState<'overview' | 'classrooms' | 'lectures'>('overview')
   const [classrooms, setClassrooms] = useState<Classroom[]>([])
   const [selectedClassroom, setSelectedClassroom] = useState<Classroom | null>(null)
@@ -426,60 +429,73 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Header Section */}
-      <header className="bg-white/80 backdrop-blur-lg shadow-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Left Side - Teacher Name */}
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-black dark:via-gray-900 dark:to-black transition-colors duration-300">
+      {/* Header Section - Mobile Optimized */}
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-lg border-b border-white/20 dark:border-gray-700/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+            {/* Top Row - Teacher Name & Theme Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                  <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Welcome, {user.name}!</h1>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Teacher Dashboard - Gyaandhara Platform</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Welcome, {user.name}!</h1>
-                <p className="text-gray-600">Teacher Dashboard - Gyaandhara Platform</p>
+              
+              {/* Mobile Theme Toggle */}
+              <div className="lg:hidden">
+                <ThemeToggle />
               </div>
             </div>
             
-            {/* Navigation Tabs */}
-            <div className="flex items-center space-x-2">
+            {/* Middle Row - Navigation Tabs (Mobile: Horizontal Scroll) */}
+            <div className="flex overflow-x-auto space-x-2 pb-2 lg:pb-0 lg:space-x-4">
               <button
                 onClick={() => setActiveTab('overview')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                className={`flex-shrink-0 px-3 py-2 sm:px-4 rounded-lg font-medium transition-all duration-200 ${
                   activeTab === 'overview' 
                     ? 'bg-blue-500 text-white shadow-md' 
-                    : 'text-gray-600 hover:bg-white/50'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50'
                 }`}
               >
-                <Home className="w-4 h-4 inline mr-2" />
-                Overview
+                <Home className="w-4 h-4 inline mr-1 sm:mr-2" />
+                <span className="text-sm sm:text-base">Overview</span>
               </button>
               <button
                 onClick={() => setActiveTab('classrooms')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                className={`flex-shrink-0 px-3 py-2 sm:px-4 rounded-lg font-medium transition-all duration-200 ${
                   activeTab === 'classrooms' 
                     ? 'bg-blue-500 text-white shadow-md' 
-                    : 'text-gray-600 hover:bg-white/50'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50'
                 }`}
               >
-                <School className="w-4 h-4 inline mr-2" />
-                Classrooms
+                <School className="w-4 h-4 inline mr-1 sm:mr-2" />
+                <span className="text-sm sm:text-base">Classrooms</span>
               </button>
             </div>
             
-            {/* Right Side - Action Buttons */}
-            <div className="flex items-center space-x-3">
+            {/* Bottom Row - Action Buttons */}
+            <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-3 lg:items-center">
+              {/* Desktop Theme Toggle */}
+              <div className="hidden lg:block">
+                <ThemeToggle />
+              </div>
+              
               <button
                 onClick={() => setShowCreateClassroom(true)}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 flex items-center space-x-2"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 sm:px-4 rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base"
               >
                 <Plus className="w-4 h-4" />
                 <span>New Classroom</span>
               </button>
+              
               <button
                 onClick={handleLogout}
-                className="bg-white text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors border border-gray-200 shadow-sm flex items-center space-x-2"
+                className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-3 py-2 sm:px-4 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-600 shadow-sm flex items-center justify-center space-x-2 text-sm sm:text-base"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
@@ -489,66 +505,66 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="space-y-8">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20">
+          <div className="space-y-6 sm:space-y-8">
+            {/* Stats Cards - Mobile: 2x2 grid, Desktop: 4 columns */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+              <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-white/20 dark:border-gray-700/50">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-600">Total Classrooms</h3>
-                    <p className="text-3xl font-bold text-blue-600">{classrooms.length}</p>
+                    <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">Total Classrooms</h3>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">{classrooms.length}</p>
                   </div>
-                  <School className="w-8 h-8 text-blue-500" />
+                  <School className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-blue-500" />
                 </div>
               </div>
               
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-white/20 dark:border-gray-700/50">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-600">Total Students</h3>
-                    <p className="text-3xl font-bold text-green-600">
+                    <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">Total Students</h3>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">
                       {classrooms.reduce((sum, c) => sum + c.stats.totalStudents, 0)}
                     </p>
                   </div>
-                  <Users className="w-8 h-8 text-green-500" />
+                  <Users className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-green-500" />
                 </div>
               </div>
               
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-white/20 dark:border-gray-700/50">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-600">Total Lectures</h3>
-                    <p className="text-3xl font-bold text-purple-600">
+                    <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">Total Lectures</h3>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-600">
                       {classrooms.reduce((sum, c) => sum + c.stats.totalLectures, 0)}
                     </p>
                   </div>
-                  <BookOpen className="w-8 h-8 text-purple-500" />
+                  <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-purple-500" />
                 </div>
               </div>
               
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-white/20 dark:border-gray-700/50">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-600">Avg Attendance</h3>
-                    <p className="text-3xl font-bold text-orange-600">
+                    <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">Avg Attendance</h3>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-orange-600">
                       {Math.round(classrooms.reduce((sum, c) => sum + c.stats.averageAttendance, 0) / (classrooms.length || 1))}%
                     </p>
                   </div>
-                  <Target className="w-8 h-8 text-orange-500" />
+                  <Target className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-orange-500" />
                 </div>
               </div>
             </div>
 
             {/* Recent Classrooms */}
-            <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Your Classrooms</h2>
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-xl lg:rounded-2xl p-4 sm:p-6 shadow-lg border border-white/20 dark:border-gray-700/50">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Your Classrooms</h2>
                 <button
                   onClick={() => setActiveTab('classrooms')}
-                  className="text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-1"
+                  className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center space-x-1 text-sm sm:text-base"
                 >
                   <span>View All</span>
                   <ChevronRight className="w-4 h-4" />
@@ -556,46 +572,46 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
               </div>
               
               {classrooms.length === 0 ? (
-                <div className="text-center py-12">
-                  <School className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-600 mb-2">No Classrooms Yet</h3>
-                  <p className="text-gray-500 mb-6">Create your first classroom to start teaching!</p>
+                <div className="text-center py-8 sm:py-12">
+                  <School className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 dark:text-gray-600 mx-auto mb-3 sm:mb-4" />
+                  <h3 className="text-base sm:text-lg font-medium text-gray-600 dark:text-gray-300 mb-2">No Classrooms Yet</h3>
+                  <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">Create your first classroom to start teaching!</p>
                   <button
                     onClick={() => setShowCreateClassroom(true)}
-                    className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                    className="bg-blue-500 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm sm:text-base"
                   >
                     Create First Classroom
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {classrooms.slice(0, 6).map((classroom) => (
-                    <div key={classroom._id} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100 hover:shadow-md transition-all duration-200">
+                    <div key={classroom._id} className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-blue-100 dark:border-blue-800/50 hover:shadow-md transition-all duration-200">
                       <div className="flex justify-between items-start mb-3">
-                        <div className="flex-1">
-                          <h3 className="font-bold text-gray-900 truncate">{classroom.name}</h3>
-                          <p className="text-sm text-blue-600">{classroom.subject}</p>
-                          <p className="text-xs text-gray-500">Code: {classroom.classroomCode}</p>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-gray-900 dark:text-white truncate text-sm sm:text-base">{classroom.name}</h3>
+                          <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400">{classroom.subject}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Code: {classroom.classroomCode}</p>
                         </div>
                         <button
                           onClick={() => copyClassroomCode(classroom.classroomCode)}
-                          className="p-1 hover:bg-blue-100 rounded"
+                          className="p-1 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded flex-shrink-0"
                           title="Copy code"
                         >
-                          <Copy className="w-4 h-4 text-gray-500" />
+                          <Copy className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 dark:text-gray-400" />
                         </button>
                       </div>
                       
-                      <div className="flex justify-between items-center text-xs text-gray-600 mb-3">
+                      <div className="flex justify-between items-center text-xs text-gray-600 dark:text-gray-400 mb-3">
                         <span>👥 {classroom.stats.totalStudents} students</span>
                         <span>📚 {classroom.stats.totalLectures} lectures</span>
                       </div>
                       
                       <button
                         onClick={() => handleViewClassroom(classroom)}
-                        className="w-full bg-blue-500 text-white py-2 px-3 rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium flex items-center justify-center space-x-2"
+                        className="w-full bg-blue-500 text-white py-2 px-3 rounded-lg hover:bg-blue-600 transition-colors text-xs sm:text-sm font-medium flex items-center justify-center space-x-2"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                         <span>View Details</span>
                       </button>
                     </div>
@@ -608,13 +624,13 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
 
         {/* Classrooms Tab */}
         {activeTab === 'classrooms' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">My Classrooms</h2>
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">My Classrooms</h2>
               <button
                 onClick={fetchTeacherClassrooms}
                 disabled={refreshing}
-                className="flex items-center space-x-2 px-4 py-2 bg-white text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 border border-gray-200"
+                className="flex items-center justify-center space-x-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 border border-gray-200 dark:border-gray-600 text-sm sm:text-base"
               >
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
@@ -622,58 +638,58 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
             </div>
             
             {classrooms.length === 0 ? (
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-12 text-center shadow-lg border border-white/20">
-                <School className="w-20 h-20 text-gray-300 mx-auto mb-6" />
-                <h3 className="text-xl font-medium text-gray-600 mb-3">No Classrooms Yet</h3>
-                <p className="text-gray-500 mb-8 max-w-md mx-auto">
+              <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-xl lg:rounded-2xl p-6 sm:p-8 lg:p-12 text-center shadow-lg border border-white/20 dark:border-gray-700/50">
+                <School className="w-16 h-16 sm:w-20 sm:h-20 text-gray-300 dark:text-gray-600 mx-auto mb-4 sm:mb-6" />
+                <h3 className="text-lg sm:text-xl font-medium text-gray-600 dark:text-gray-300 mb-2 sm:mb-3">No Classrooms Yet</h3>
+                <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-6 sm:mb-8 max-w-md mx-auto">
                   Create your first classroom to organize your lectures and manage students effectively.
                 </p>
                 <button
                   onClick={() => setShowCreateClassroom(true)}
-                  className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 py-3 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 font-medium"
+                  className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 sm:px-8 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 font-medium text-sm sm:text-base"
                 >
                   Create Your First Classroom
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {classrooms.map((classroom) => (
-                  <div key={classroom._id} className="bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/30 hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-xl text-gray-900 mb-1">{classroom.name}</h3>
-                        <p className="text-blue-600 font-medium">{classroom.subject}</p>
+                  <div key={classroom._id} className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg rounded-xl lg:rounded-2xl p-4 sm:p-6 shadow-lg border border-white/30 dark:border-gray-700/50 hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="flex justify-between items-start mb-3 sm:mb-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-lg sm:text-xl text-gray-900 dark:text-white mb-1 truncate">{classroom.name}</h3>
+                        <p className="text-blue-600 dark:text-blue-400 font-medium text-sm sm:text-base">{classroom.subject}</p>
                         {classroom.description && (
-                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">{classroom.description}</p>
+                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">{classroom.description}</p>
                         )}
                       </div>
                     </div>
                     
                     {/* Classroom Code */}
-                    <div className="bg-blue-50 rounded-lg p-3 mb-4">
+                    <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 mb-3 sm:mb-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs text-gray-600">Classroom Code</p>
-                          <p className="font-bold text-blue-800">{classroom.classroomCode}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-gray-600 dark:text-gray-400">Classroom Code</p>
+                          <p className="font-bold text-blue-800 dark:text-blue-300 text-sm sm:text-base truncate">{classroom.classroomCode}</p>
                         </div>
                         <button
                           onClick={() => copyClassroomCode(classroom.classroomCode)}
-                          className="p-2 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors"
+                          className="p-2 bg-blue-100 dark:bg-blue-800/50 hover:bg-blue-200 dark:hover:bg-blue-700/50 rounded-lg transition-colors flex-shrink-0"
                           title="Copy code"
                         >
-                          <Copy className="w-4 h-4 text-blue-600" />
+                          <Copy className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" />
                         </button>
                       </div>
                     </div>
                     
                     {/* Stats */}
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
                       <div className="text-center">
-                        <p className="text-2xl font-bold text-green-600">{classroom.stats.totalStudents}</p>
-                        <p className="text-xs text-gray-600">Students</p>
+                        <p className="text-xl sm:text-2xl font-bold text-green-600">{classroom.stats.totalStudents}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Students</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-2xl font-bold text-purple-600">{classroom.stats.totalLectures}</p>
+                        <p className="text-xl sm:text-2xl font-bold text-purple-600">{classroom.stats.totalLectures}</p>
                         <p className="text-xs text-gray-600">Lectures</p>
                       </div>
                     </div>
@@ -721,12 +737,12 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
       {/* Create Classroom Modal */}
       {showCreateClassroom && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Create New Classroom</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create New Classroom</h2>
               <button
                 onClick={() => setShowCreateClassroom(false)}
-                className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-600"
+                className="w-8 h-8 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"
               >
                 ×
               </button>
@@ -734,13 +750,13 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
 
             <form onSubmit={handleCreateClassroom} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Classroom Name *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Classroom Name *</label>
                 <input
                   type="text"
                   required
                   value={newClassroom.name}
                   onChange={(e) => setNewClassroom({ ...newClassroom, name: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
                   placeholder="e.g. Physics Grade 12, Mathematics Advanced"
                 />
               </div>

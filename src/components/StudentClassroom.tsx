@@ -1,12 +1,6 @@
 'use client'
 
-import { useState, useEffect   const [bandwidthSettings] = useState({
-    mode: 'normal' as 'ultra-low' | 'low' | 'normal',
-    maxVideoQuality: '720p',
-    audioQuality: 'medium',
-    strokeSimplification: false,
-    autoCompress: true
-  })react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Users, Clock, LogOut, Mic, MicOff, Hand, MessageSquare, ChevronRight, ChevronLeft } from 'lucide-react'
 import FullWhiteBoard from './FullWhiteBoard'

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from '../../src/contexts/ThemeContext'
 import TeacherDashboard from '@/components/NewTeacherDashboard'
 
 interface User {
@@ -12,6 +13,7 @@ interface User {
 }
 
 export default function TeacherDashboardPage() {
+  const { isDarkMode } = useTheme()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [classroomData, setClassroomData] = useState({
@@ -62,10 +64,10 @@ export default function TeacherDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-black dark:via-gray-900 dark:to-black">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-700 font-medium">Loading teacher dashboard...</p>
+          <p className="text-gray-700 dark:text-gray-200 font-medium">Loading teacher dashboard...</p>
         </div>
       </div>
     )

@@ -36,9 +36,269 @@
     33% { transform: translateY(-20px) rotate(120deg); }
     66% { transform: translateY(-10px) rotate(240deg); }
   }
+
+  /* Whiteboard Animation Keyframes */
+  @keyframes draw {
+    from {
+      stroke-dashoffset: 220;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.1);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Precise Wire Animations */
+  @keyframes drawPreciseWire {
+    0% {
+      stroke-dashoffset: 150;
+      opacity: 0.3;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+
+  @keyframes showLiveSync {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.8);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes dataFlowPrecise {
+    0% {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    20% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    80% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+  }
+
+  @keyframes slideRight {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(300%);
+    }
+  }
+
+  @keyframes drawWire {
+    0% {
+      stroke-dashoffset: 500;
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 0.8;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+
+  @keyframes showGlow {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 0.4;
+    }
+  }
+
+  @keyframes particleFlow {
+    0% {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    20% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    80% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+  }
+
+  @keyframes showConnectionInfo {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.8);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes showSuccessMessage {
+    0% {
+      opacity: 0;
+      transform: translateY(30px) scale(0.8);
+    }
+    50% {
+      transform: translateY(-5px) scale(1.02);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes drawConnection {
+    0% {
+      stroke-dashoffset: 400;
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+
+  @keyframes showArrows {
+    0% {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes showStatus {
+    0% {
+      opacity: 0;
+      transform: translateY(20px) scale(0.8);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes dataFlowNew {
+    0% {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+  }
+
+  @keyframes connectWire {
+    0% {
+      width: 0%;
+      opacity: 0;
+    }
+    50% {
+      width: 50%;
+      opacity: 1;
+    }
+    100% {
+      width: 100%;
+      opacity: 1;
+    }
+  }
+
+  @keyframes dataFlow {
+    0% {
+      transform: translateX(-20px);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(200px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes socketGlow {
+    0%, 100% {
+      box-shadow: 0 0 5px rgba(34, 197, 94, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.8), 0 0 30px rgba(34, 197, 94, 0.4);
+    }
+  }
+
+  @keyframes plugInsert {
+    0% {
+      transform: translateX(10px);
+    }
+    100% {
+      transform: translateX(0px);
+    }
+  }
 }
 
 /* VoiceBoard Custom Styles */
+:root {
+  /* Light mode colors */
+  --navbar-bg: rgba(255, 255, 255, 0.95);
+  --navbar-text: rgb(55, 65, 81);
+  --navbar-text-hover: rgb(37, 99, 235);
+  --navbar-border: rgb(243, 244, 246);
+}
+
+.dark {
+  /* Dark mode colors with enhanced contrast */
+  --navbar-bg: rgba(17, 24, 39, 0.98);
+  --navbar-text: rgb(243, 244, 246);
+  --navbar-text-hover: rgb(96, 165, 250);
+  --navbar-border: rgb(55, 65, 81);
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -68,6 +328,51 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
+}
+
+/* Enhanced Navbar Dark Mode */
+.navbar-enhanced {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.dark .navbar-enhanced {
+  background: rgba(17, 24, 39, 0.98);
+  border-color: rgba(75, 85, 99, 0.6);
+}
+
+/* Enhanced text contrast for dark mode */
+.dark .navbar-text {
+  color: rgb(249, 250, 251);
+}
+
+.dark .navbar-text:hover {
+  color: rgb(147, 197, 253);
+}
+
+/* Parent Dashboard Dark Mode Enhancements */
+.parent-dashboard-card {
+  @apply bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/50;
+}
+
+.parent-dashboard-text {
+  @apply text-gray-900 dark:text-white;
+}
+
+.parent-dashboard-text-secondary {
+  @apply text-gray-600 dark:text-gray-300;
+}
+
+.parent-dashboard-text-muted {
+  @apply text-gray-500 dark:text-gray-400;
+}
+
+.parent-dashboard-bg-muted {
+  @apply bg-gray-50 dark:bg-gray-800/50;
+}
+
+.parent-dashboard-border {
+  @apply border-gray-200 dark:border-gray-700;
 }
 
 /* Dark mode scrollbar */

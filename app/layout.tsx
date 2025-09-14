@@ -1,8 +1,9 @@
 import './globals.css'
+import { ThemeProvider } from '../src/contexts/ThemeContext'
 
 export const metadata = {
-  title: 'VoiceBoard - AI-Powered Learning Platform',
-  description: 'Low-bandwidth online learning platform for rural students',
+  title: 'GYANDHARA - AI-Powered Learning Platform',
+  description: 'Low-bandwidth online learning platform for rural students with interactive whiteboard and parent portal',
 }
 
 export default function RootLayout({
@@ -12,7 +13,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   )
 }

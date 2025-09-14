@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from '../../src/contexts/ThemeContext'
 import NewStudentDashboard from '../../src/components/NewStudentDashboard'
 
 interface User {
@@ -12,6 +13,7 @@ interface User {
 }
 
 export default function StudentDashboardPage() {
+  const { isDarkMode } = useTheme()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -38,10 +40,10 @@ export default function StudentDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 dark:from-black dark:via-gray-900 dark:to-black">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-700 font-medium">Loading dashboard...</p>
+          <p className="text-gray-700 dark:text-gray-200 font-medium">Loading dashboard...</p>
         </div>
       </div>
     )
@@ -52,7 +54,7 @@ export default function StudentDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen dark:bg-black">
       <NewStudentDashboard user={user} />
     </div>
   )

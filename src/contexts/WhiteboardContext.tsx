@@ -149,7 +149,14 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
         userToken: userToken ? 'provided' : 'missing'
       })
       
-      // Join the room
+      // Join the room with enhanced logging
+      console.log('🏠 Attempting to join room:', {
+        roomId,
+        userId,
+        isTeacher: isTeacherParam,
+        socketConnected: newSocket.connected
+      })
+      
       newSocket.emit('join-room', {
         roomId,
         userId,
@@ -245,7 +252,17 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
     newSocket.on('class-ended', (data) => {
       console.log('🛑 Class ended by teacher:', data.message)
       
-      // Show popup to student
+      // Only show popup to students, not to the teacher who ended the class
+      const userRole = localStorage.getItem('userRole')
+      const userId = localStorage.getItem('userId')
+      
+      // Don't show popup if this is the teacher who ended the class
+      if (userRole === 'teacher' || userId === data.teacherId) {
+        console.log('🎓 Teacher ended class - no popup needed')
+        return
+      }
+      
+      // Show popup to students only
       if (typeof window !== 'undefined') {
         const showClassEndedPopup = () => {
           const popup = document.createElement('div')
@@ -308,7 +325,14 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
 
     // Drawing events - Enhanced with compression
     newSocket.on('drawing-element-update', (data) => {
-      console.log('🎨 Drawing element update received:', data.action, data.element?.type)
+      console.log('🎨 Drawing element update received:', {
+        action: data.action,
+        elementType: data.element?.type,
+        elementId: data.element?.id,
+        teacherId: data.teacherId,
+        timestamp: data.timestamp,
+        isTeacher: isTeacherParam
+      })
       
       if (data.action === 'add' && data.element) {
         setDrawingElements(prev => {
@@ -323,7 +347,7 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
             return prev
           }
           
-          console.log('✅ Adding new drawing element:', data.element.type, data.element.id)
+          console.log('✅ Adding new drawing element for students:', data.element.type, data.element.id)
           return [...prev, data.element]
         })
       } else if (data.action === 'erase' && data.elementId) {
@@ -565,7 +589,11 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
   const sendDrawingElement = (element: DrawingElement) => {
     if (socket && isConnected && isTeacher) {
       console.log('📤 Sending drawing element:', element.type, element.id)
+      
+      // Send using legacy method for compatibility
       socket.emit('drawing-element', element)
+      
+      console.log('✅ Drawing element sent via drawing-element event')
     } else {
       console.warn('❌ Cannot send drawing element - not connected or not teacher:', {
         hasSocket: !!socket,

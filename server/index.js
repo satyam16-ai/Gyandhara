@@ -23,32 +23,80 @@ const classroomRoutes = require('./routes/classrooms')
 
 const app = express()
 const server = http.createServer(app)
+
+// Dynamic CORS configuration for production
+const allowedOrigins = config.IS_PRODUCTION 
+  ? [
+      config.FRONTEND_URL,
+      'https://your-domain.com',
+      'https://www.your-domain.com',
+      'https://gyandhara-platform.herokuapp.com',
+      'https://gyandhara-platform.vercel.app',
+      'https://gyandhara-platform.netlify.app'
+    ]
+  : [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:3002',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001'
+    ]
+
 const io = socketIo(server, {
   cors: {
-    origin: ["http://localhost:3000", "https://voiceboard-educational-platform.vercel.app"],
-    methods: ["GET", "POST"],
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
     credentials: true
   }
 })
 
-// Middleware setup
-app.use(helmet())
+// Enhanced security middleware
+app.use(helmet({
+  contentSecurityPolicy: config.IS_PRODUCTION ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "wss:", "ws:"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"]
+    }
+  } : false,
+  crossOriginEmbedderPolicy: false
+}))
+
 app.use(cors({
-  origin: ["http://localhost:3000", "https://voiceboard-educational-platform.vercel.app"],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true)
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || !config.IS_PRODUCTION) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with']
 }))
+
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 
-  // Log API requests (production-ready logging)
-  app.use((req, res, next) => {
-    if (req.path.startsWith('/api/')) {
-      console.log(`🌐 ${req.method} ${req.path}`)
-    }
-    next()
-  })
+// Enhanced logging for production
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    const logMessage = config.IS_PRODUCTION 
+      ? `🌐 ${req.method} ${req.path} - ${req.ip}`
+      : `🌐 ${req.method} ${req.path}`
+    console.log(logMessage)
+  }
+  next()
+})
 
 // API Routes
 app.use('/api/admin', adminRoutes)
@@ -91,33 +139,6 @@ app.get('/api/health', (req, res) => {
     socket.to(socket.sessionId).emit('typing-status', data)
   })
 })
-
-/* Reuse the previously created app instance; do not redeclare 'app' to avoid block-scoped redeclaration */
-// Reusing the previously created app, server and io instances to avoid redeclaration
-// (const app, server and io were created earlier in this file)
-// Middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "ws:", "wss:", "http:", "https:"],
-      fontSrc: ["'self'", "data:", "https:"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'", "data:", "blob:"],
-      frameSrc: ["'self'"],
-    },
-  },
-  crossOriginEmbedderPolicy: false,
-}))
-app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003", "http://localhost:3004", "http://localhost:3005", "http://localhost:3006", "http://localhost:3007", "http://localhost:3008"],
-  credentials: true
-}))
-app.use(express.json({ limit: '50mb' }))
-app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 
 // Connect to MongoDB
 connectDB()
@@ -713,7 +734,21 @@ io.on('connection', (socket) => {
 
   // Legacy drawing element handler (maintained for compatibility)
   socket.on('drawing-element', async (elementData) => {
-    if (socket.role !== 'teacher') return // Only teachers can draw
+    console.log('📝 Drawing element received from:', {
+      userId: socket.userId,
+      userName: socket.userName,
+      role: socket.role,
+      isTeacher: socket.role === 'teacher',
+      sessionId: socket.sessionId,
+      roomId: socket.roomId,
+      elementType: elementData?.type,
+      elementId: elementData?.id
+    })
+    
+    if (socket.role !== 'teacher') {
+      console.log('❌ Rejected: Only teachers can draw')
+      return
+    }
     
     try {
       // Store in database for persistence
@@ -733,14 +768,25 @@ io.on('connection', (socket) => {
       })
       
       await stroke.save()
+      console.log('💾 Drawing element saved to database')
       
       // Broadcast to all students in real-time
-      socket.to(socket.sessionId).emit('drawing-element-update', {
+      const broadcastData = {
         action: 'add',
         element: elementData,
         teacherId: socket.userId,
         timestamp: Date.now()
+      }
+      
+      console.log('📤 Broadcasting to room:', socket.sessionId, 'data:', {
+        action: broadcastData.action,
+        elementType: broadcastData.element?.type,
+        elementId: broadcastData.element?.id,
+        teacherId: broadcastData.teacherId
       })
+      
+      socket.to(socket.sessionId).emit('drawing-element-update', broadcastData)
+      console.log('✅ Drawing element broadcasted successfully')
       
       // Update session stats
       await ClassSession.findByIdAndUpdate(socket.sessionId, {
@@ -748,7 +794,7 @@ io.on('connection', (socket) => {
       })
       
     } catch (error) {
-      console.error('Error saving drawing element:', error)
+      console.error('❌ Error saving drawing element:', error)
     }
   })
 

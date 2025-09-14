@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from '../contexts/ThemeContext'
+import ThemeToggle from './ThemeToggle'
 import { 
   BookOpen, 
   Users, 
@@ -95,6 +97,7 @@ interface NewStudentDashboardProps {
 }
 
 export default function NewStudentDashboard({ user }: NewStudentDashboardProps) {
+  const { isDarkMode } = useTheme()
   const [activeTab, setActiveTab] = useState<'overview' | 'classrooms' | 'lectures'>('overview')
   const [classrooms, setClassrooms] = useState<Classroom[]>([])
   const [allLectures, setAllLectures] = useState<Lecture[]>([])
@@ -356,60 +359,73 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-indigo-50">
-      {/* Header Section */}
-      <header className="bg-white/80 backdrop-blur-lg shadow-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Left Side - Student Name */}
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-indigo-50 dark:from-black dark:via-gray-900 dark:to-black transition-colors duration-300">
+      {/* Header Section - Mobile Optimized */}
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-lg border-b border-white/20 dark:border-gray-700/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+            {/* Top Row - Student Name & Theme Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Welcome, {user.name}!</h1>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Student Dashboard - Gyaandhara Platform</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Welcome, {user.name}!</h1>
-                <p className="text-gray-600">Student Dashboard - Gyaandhara Platform</p>
+              
+              {/* Mobile Theme Toggle */}
+              <div className="lg:hidden">
+                <ThemeToggle />
               </div>
             </div>
             
-            {/* Navigation Tabs */}
-            <div className="flex items-center space-x-2">
+            {/* Middle Row - Navigation Tabs (Mobile: Horizontal Scroll) */}
+            <div className="flex overflow-x-auto space-x-2 pb-2 lg:pb-0 lg:space-x-4">
               <button
                 onClick={() => setActiveTab('overview')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                className={`flex-shrink-0 px-3 py-2 sm:px-4 rounded-lg font-medium transition-all duration-200 ${
                   activeTab === 'overview' 
                     ? 'bg-blue-500 text-white shadow-md' 
-                    : 'text-gray-600 hover:bg-white/50'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50'
                 }`}
               >
-                <Home className="w-4 h-4 inline mr-2" />
-                Overview
+                <Home className="w-4 h-4 inline mr-1 sm:mr-2" />
+                <span className="text-sm sm:text-base">Overview</span>
               </button>
               <button
                 onClick={() => setActiveTab('classrooms')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                className={`flex-shrink-0 px-3 py-2 sm:px-4 rounded-lg font-medium transition-all duration-200 ${
                   activeTab === 'classrooms' 
                     ? 'bg-blue-500 text-white shadow-md' 
-                    : 'text-gray-600 hover:bg-white/50'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50'
                 }`}
               >
-                <School className="w-4 h-4 inline mr-2" />
-                My Classrooms
+                <School className="w-4 h-4 inline mr-1 sm:mr-2" />
+                <span className="text-sm sm:text-base">My Classrooms</span>
               </button>
             </div>
             
-            {/* Right Side - Action Buttons */}
-            <div className="flex items-center space-x-3">
+            {/* Bottom Row - Action Buttons */}
+            <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-3 lg:items-center">
+              {/* Desktop Theme Toggle */}
+              <div className="hidden lg:block">
+                <ThemeToggle />
+              </div>
+              
               <button
                 onClick={() => setShowJoinClassroom(true)}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 flex items-center space-x-2"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 sm:px-4 rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base"
               >
                 <Plus className="w-4 h-4" />
                 <span>Join Class</span>
               </button>
+              
               <button
                 onClick={handleLogout}
-                className="bg-white text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors border border-gray-200 shadow-sm flex items-center space-x-2"
+                className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-3 py-2 sm:px-4 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-600 shadow-sm flex items-center justify-center space-x-2 text-sm sm:text-base"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
@@ -419,40 +435,40 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {/* Live Lectures Alert */}
             {liveLectures.length > 0 && (
-              <div className="bg-red-50 border-l-4 border-red-400 rounded-2xl p-6 shadow-lg">
-                <h2 className="text-xl font-bold text-red-800 mb-4 flex items-center">
+              <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 dark:border-red-500 rounded-xl lg:rounded-2xl p-4 sm:p-6 shadow-lg">
+                <h2 className="text-lg sm:text-xl font-bold text-red-800 dark:text-red-300 mb-3 sm:mb-4 flex items-center">
                   <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse mr-3"></div>
                   🔴 Live Lectures - Join Now!
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                   {liveLectures.map((lecture) => (
-                    <div key={lecture._id} className="bg-white rounded-xl p-4 border border-red-200 shadow-md">
+                    <div key={lecture._id} className="bg-white dark:bg-gray-800/90 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-red-200 dark:border-red-700/50 shadow-md">
                       <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="font-bold text-gray-900">{lecture.topic}</h3>
-                          <p className="text-sm text-blue-600">{lecture.classroomName}</p>
-                          <p className="text-xs text-gray-600">{lecture.subject}</p>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-bold text-gray-900 dark:text-white text-sm sm:text-base truncate">{lecture.topic}</h3>
+                          <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 truncate">{lecture.classroomName}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{lecture.subject}</p>
                         </div>
-                        <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-bold rounded-full">
+                        <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs font-bold rounded-full flex-shrink-0">
                           🔴 LIVE
                         </span>
                       </div>
                       
-                      <div className="flex justify-between items-center text-xs text-gray-600 mb-3">
-                        <span>👨‍🏫 {lecture.teacherId?.name}</span>
-                        <span>⏱️ {lecture.duration} min</span>
+                      <div className="flex justify-between items-center text-xs text-gray-600 dark:text-gray-400 mb-3">
+                        <span className="truncate">👨‍🏫 {lecture.teacherId?.name}</span>
+                        <span className="flex-shrink-0">⏱️ {lecture.duration} min</span>
                       </div>
                       
                       <button
                         onClick={() => handleJoinLecture(lecture)}
-                        className="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-all font-medium flex items-center justify-center space-x-2"
+                        className="w-full bg-red-500 text-white py-2 px-3 sm:px-4 rounded-lg hover:bg-red-600 transition-all font-medium flex items-center justify-center space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 text-xs sm:text-sm"
                       >
                         <Video className="w-4 h-4" />
                         <span>Join Live Class</span>
@@ -465,57 +481,65 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20 dark:border-gray-700/50 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-600">Enrolled Classes</h3>
-                    <p className="text-3xl font-bold text-green-600">{classrooms.length}</p>
+                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Enrolled Classes</h3>
+                    <p className="text-3xl font-bold text-green-600 dark:text-green-400">{classrooms.length}</p>
                   </div>
-                  <School className="w-8 h-8 text-green-500" />
+                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                    <School className="w-8 h-8 text-green-500" />
+                  </div>
                 </div>
               </div>
               
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20 dark:border-gray-700/50 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-600">Live Lectures</h3>
-                    <p className="text-3xl font-bold text-red-600">{liveLectures.length}</p>
+                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Live Lectures</h3>
+                    <p className="text-3xl font-bold text-red-600 dark:text-red-400">{liveLectures.length}</p>
                   </div>
-                  <Video className="w-8 h-8 text-red-500" />
+                  <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
+                    <Video className="w-8 h-8 text-red-500" />
+                  </div>
                 </div>
               </div>
               
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20 dark:border-gray-700/50 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-600">Upcoming</h3>
-                    <p className="text-3xl font-bold text-blue-600">{upcomingLectures.length}</p>
+                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Upcoming</h3>
+                    <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{upcomingLectures.length}</p>
                   </div>
-                  <Clock className="w-8 h-8 text-blue-500" />
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                    <Clock className="w-8 h-8 text-blue-500" />
+                  </div>
                 </div>
               </div>
               
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20 dark:border-gray-700/50 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-600">Attendance</h3>
-                    <p className="text-3xl font-bold text-orange-600">
+                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Attendance</h3>
+                    <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
                       {Math.round(classrooms.reduce((sum, c) => sum + (c.attendanceStats?.attendancePercentage || 0), 0) / (classrooms.length || 1))}%
                     </p>
                   </div>
-                  <Target className="w-8 h-8 text-orange-500" />
+                  <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                    <Target className="w-8 h-8 text-orange-500" />
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Upcoming Lectures */}
-            <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20">
+            <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20 dark:border-gray-700/50">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Upcoming Lectures</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Upcoming Lectures</h2>
                 <button
                   onClick={fetchStudentData}
                   disabled={refreshing}
-                  className="text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-2"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
                 >
                   <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>
@@ -524,12 +548,14 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
               
               {upcomingLectures.length === 0 ? (
                 <div className="text-center py-12">
-                  <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-600 mb-2">No Upcoming Lectures</h3>
-                  <p className="text-gray-500 mb-6">Join a classroom to see scheduled lectures</p>
+                  <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+                    <Calendar className="w-10 h-10 text-gray-400 dark:text-gray-500" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-2">No Upcoming Lectures</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-6">Join a classroom to see scheduled lectures</p>
                   <button
                     onClick={() => setShowJoinClassroom(true)}
-                    className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                    className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-all font-medium shadow-md hover:shadow-lg transform hover:scale-105"
                   >
                     Join a Classroom
                   </button>
@@ -537,28 +563,28 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {upcomingLectures.slice(0, 6).map((lecture) => (
-                    <div key={lecture._id} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+                    <div key={lecture._id} className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800/50 hover:shadow-md transition-all duration-200">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h3 className="font-bold text-gray-900">{lecture.topic}</h3>
-                          <p className="text-sm text-blue-600">{lecture.classroomName}</p>
-                          <p className="text-xs text-gray-600">👨‍🏫 {lecture.teacherId?.name}</p>
+                          <h3 className="font-bold text-gray-900 dark:text-white">{lecture.topic}</h3>
+                          <p className="text-sm text-blue-600 dark:text-blue-400">{lecture.classroomName}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">👨‍🏫 {lecture.teacherId?.name}</p>
                         </div>
                         {getStatusBadge(lecture.status)}
                       </div>
                       
-                      <div className="flex justify-between items-center text-xs text-gray-600 mb-3">
+                      <div className="flex justify-between items-center text-xs text-gray-600 dark:text-gray-400 mb-3">
                         <span>📅 {new Date(lecture.scheduledDate).toLocaleDateString()}</span>
                         <span>⏱️ {lecture.duration} min</span>
                       </div>
                       
-                      <div className="text-xs text-gray-500 mb-3">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                         🕒 {new Date(lecture.scheduledDate).toLocaleTimeString()}
                       </div>
                       
                       <button
                         disabled
-                        className="w-full bg-gray-300 text-gray-500 py-2 px-3 rounded-lg text-sm font-medium cursor-not-allowed"
+                        className="w-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 py-2 px-3 rounded-lg text-sm font-medium cursor-not-allowed"
                       >
                         Waiting for teacher to start
                       </button>
@@ -569,12 +595,12 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
             </div>
 
             {/* Enrolled Classrooms */}
-            <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20">
+            <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20 dark:border-gray-700/50">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">My Classrooms</h2>
+                <h2 className="text-xl font-bold text-white-400 dark:text-white">My Classrooms</h2>
                 <button
                   onClick={() => setActiveTab('classrooms')}
-                  className="text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-1"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
                 >
                   <span>View All</span>
                   <ChevronRight className="w-4 h-4" />
@@ -583,12 +609,14 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
               
               {classrooms.length === 0 ? (
                 <div className="text-center py-12">
-                  <School className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-600 mb-2">No Classrooms Joined</h3>
-                  <p className="text-gray-500 mb-6">Ask your teacher for a classroom code to get started!</p>
+                  <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+                    <School className="w-10 h-10 text-gray-400 dark:text-gray-500" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-2">No Classrooms Joined</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-6">Ask your teacher for a classroom code to get started!</p>
                   <button
                     onClick={() => setShowJoinClassroom(true)}
-                    className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors font-medium"
+                    className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all font-medium shadow-md hover:shadow-lg transform hover:scale-105"
                   >
                     Join Your First Classroom
                   </button>
@@ -596,17 +624,17 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {classrooms.slice(0, 6).map((classroom) => (
-                    <div key={classroom._id} className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl p-4 border border-green-100 hover:shadow-md transition-all duration-200">
+                    <div key={classroom._id} className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-4 border border-green-100 dark:border-green-800/50 hover:shadow-md transition-all duration-200 hover:scale-105">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex-1">
-                          <h3 className="font-bold text-gray-900 truncate">{classroom.name}</h3>
-                          <p className="text-sm text-green-600">{classroom.subject}</p>
-                          <p className="text-xs text-gray-500">👨‍🏫 {classroom.teacherName}</p>
+                          <h3 className="font-bold text-gray-900 dark:text-white truncate">{classroom.name}</h3>
+                          <p className="text-sm text-green-600 dark:text-green-400">{classroom.subject}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">👨‍🏫 {classroom.teacherName}</p>
                         </div>
                         <CheckCircle className="w-5 h-5 text-green-500" />
                       </div>
                       
-                      <div className="flex justify-between items-center text-xs text-gray-600 mb-3">
+                      <div className="flex justify-between items-center text-xs text-gray-600 dark:text-gray-400 mb-3">
                         <span>📚 {classroom.stats?.totalLectures || 0} lectures</span>
                         <span>📊 {classroom.attendanceStats?.attendancePercentage || 0}% attendance</span>
                       </div>
@@ -616,7 +644,7 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
                           setSelectedClassroom(classroom)
                           setShowClassroomDetails(true)
                         }}
-                        className="w-full bg-green-500 text-white py-2 px-3 rounded-lg hover:bg-green-600 transition-colors text-sm font-medium flex items-center justify-center space-x-2"
+                        className="w-full bg-green-500 text-white py-2 px-3 rounded-lg hover:bg-green-600 transition-all text-sm font-medium flex items-center justify-center space-x-2 shadow-md hover:shadow-lg transform hover:scale-105"
                       >
                         <Eye className="w-4 h-4" />
                         <span>View Details</span>
@@ -633,7 +661,7 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
         {activeTab === 'classrooms' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">My Classrooms</h2>
+              <h2 className="text-2xl font-bold text-gray-100">My Classrooms</h2>
               <button
                 onClick={fetchStudentData}
                 disabled={refreshing}
@@ -726,13 +754,13 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
 
       {/* Join Classroom Modal */}
       {showJoinClassroom && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-white/20 dark:border-gray-700/50">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Join a Classroom</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Join a Classroom</h2>
               <button
                 onClick={() => setShowJoinClassroom(false)}
-                className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-600"
+                className="w-8 h-8 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 transition-all"
               >
                 ×
               </button>
@@ -740,17 +768,17 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
 
             <form onSubmit={handleJoinClassroom} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Classroom Code *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Classroom Code *</label>
                 <input
                   type="text"
                   required
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-center font-mono text-lg tracking-wider"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-center font-mono text-lg tracking-wider"
                   placeholder="Enter 6-digit code (e.g. ABC123)"
                   maxLength={6}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Ask your teacher for the classroom code
                 </p>
               </div>
@@ -758,14 +786,14 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                  className="flex-1 bg-green-600 dark:bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-700 dark:hover:bg-green-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105"
                 >
                   Join Classroom
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowJoinClassroom(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-400 transition-colors"
+                  className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 py-3 rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-gray-500 transition-all shadow-md hover:shadow-lg"
                 >
                   Cancel
                 </button>
@@ -777,18 +805,18 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
 
       {/* Classroom Details Modal */}
       {showClassroomDetails && selectedClassroom && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 dark:border-gray-700/50">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedClassroom.name}</h2>
-                  <p className="text-green-600 font-medium">{selectedClassroom.subject}</p>
-                  <p className="text-sm text-gray-600">👨‍🏫 {selectedClassroom.teacherName}</p>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedClassroom.name}</h2>
+                  <p className="text-green-600 dark:text-green-400 font-medium">{selectedClassroom.subject}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">👨‍🏫 {selectedClassroom.teacherName}</p>
                 </div>
                 <button
                   onClick={() => setShowClassroomDetails(false)}
-                  className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-600"
+                  className="w-8 h-8 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 transition-all"
                 >
                   ×
                 </button>
@@ -796,44 +824,44 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
 
               {/* Classroom Stats */}
               <div className="grid grid-cols-3 gap-4 mb-8">
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-2xl font-bold text-green-600">{selectedClassroom.attendanceStats?.totalLecturesAttended || 0}</p>
-                  <p className="text-sm text-gray-600">Attended</p>
+                <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800/50">
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{selectedClassroom.attendanceStats?.totalLecturesAttended || 0}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Attended</p>
                 </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-2xl font-bold text-blue-600">{selectedClassroom.stats?.totalLectures || 0}</p>
-                  <p className="text-sm text-gray-600">Total Lectures</p>
+                <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/50">
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{selectedClassroom.stats?.totalLectures || 0}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Lectures</p>
                 </div>
-                <div className="text-center p-4 bg-orange-50 rounded-lg">
-                  <p className="text-2xl font-bold text-orange-600">{selectedClassroom.attendanceStats?.attendancePercentage || 0}%</p>
-                  <p className="text-sm text-gray-600">Attendance Rate</p>
+                <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-100 dark:border-orange-800/50">
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{selectedClassroom.attendanceStats?.attendancePercentage || 0}%</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Attendance Rate</p>
                 </div>
               </div>
 
               {/* Lectures Section */}
               <div className="mb-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Available Lectures</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Available Lectures</h3>
                 
                 <div className="space-y-4">
                   {/* Live Lectures */}
                   {allLectures.filter(l => l.classroomId === selectedClassroom._id && l.status === 'live').map((lecture) => (
-                    <div key={lecture._id} className="bg-red-50 border-l-4 border-red-400 rounded-lg p-4">
+                    <div key={lecture._id} className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 dark:border-red-500 rounded-lg p-4">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-bold text-gray-900 flex items-center">
+                          <h4 className="font-bold text-gray-900 dark:text-white flex items-center">
                             🔴 {lecture.topic} 
-                            <span className="ml-2 px-2 py-1 bg-red-100 text-red-800 text-xs font-bold rounded-full">
+                            <span className="ml-2 px-2 py-1 bg-red-100 dark:bg-red-800/50 text-red-800 dark:text-red-200 text-xs font-bold rounded-full">
                               LIVE NOW
                             </span>
                           </h4>
-                          <p className="text-sm text-gray-600">Lecture {lecture.lectureNumber}</p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Lecture {lecture.lectureNumber}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                             Started: {new Date(lecture.startTime || '').toLocaleTimeString()}
                           </p>
                         </div>
                         <button
                           onClick={() => handleJoinLecture(lecture)}
-                          className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium flex items-center space-x-2"
+                          className="bg-red-500 dark:bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-600 dark:hover:bg-red-700 transition-all font-medium flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:scale-105"
                         >
                           <Video className="w-4 h-4" />
                           <span>Join Now</span>
@@ -844,17 +872,17 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
 
                   {/* Scheduled Lectures */}
                   {allLectures.filter(l => l.classroomId === selectedClassroom._id && l.status === 'scheduled').map((lecture) => (
-                    <div key={lecture._id} className="bg-blue-50 border-l-4 border-blue-400 rounded-lg p-4">
+                    <div key={lecture._id} className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 dark:border-blue-500 rounded-lg p-4">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-bold text-gray-900">{lecture.topic}</h4>
-                          <p className="text-sm text-blue-600">Lecture {lecture.lectureNumber}</p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <h4 className="font-bold text-gray-900 dark:text-white">{lecture.topic}</h4>
+                          <p className="text-sm text-blue-600 dark:text-blue-400">Lecture {lecture.lectureNumber}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                             📅 {new Date(lecture.scheduledDate).toLocaleDateString()} at {new Date(lecture.scheduledDate).toLocaleTimeString()}
                           </p>
-                          <p className="text-xs text-gray-500">⏱️ Duration: {lecture.duration} minutes</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500">⏱️ Duration: {lecture.duration} minutes</p>
                         </div>
-                        <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                        <span className="px-3 py-1 bg-blue-100 dark:bg-blue-800/50 text-blue-800 dark:text-blue-200 text-xs font-medium rounded-full">
                           📅 Scheduled
                         </span>
                       </div>
@@ -863,12 +891,12 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
 
                   {/* Completed Lectures */}
                   {allLectures.filter(l => l.classroomId === selectedClassroom._id && l.status === 'completed').slice(0, 3).map((lecture) => (
-                    <div key={lecture._id} className="bg-green-50 border-l-4 border-green-400 rounded-lg p-4">
+                    <div key={lecture._id} className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-400 dark:border-green-500 rounded-lg p-4">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-bold text-gray-900">{lecture.topic}</h4>
-                          <p className="text-sm text-green-600">Lecture {lecture.lectureNumber} - Completed</p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <h4 className="font-bold text-gray-900 dark:text-white">{lecture.topic}</h4>
+                          <p className="text-sm text-green-600 dark:text-green-400">Lecture {lecture.lectureNumber} - Completed</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                             ✅ {new Date(lecture.endTime || '').toLocaleDateString()}
                           </p>
                         </div>
@@ -879,9 +907,9 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
                 </div>
                 
                 {allLectures.filter(l => l.classroomId === selectedClassroom._id).length === 0 && (
-                  <div className="text-center py-8 bg-gray-50 rounded-xl">
-                    <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">No lectures scheduled yet</p>
+                  <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                    <BookOpen className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-500 dark:text-gray-400">No lectures scheduled yet</p>
                     <p className="text-sm text-gray-400">Check back later for new lectures</p>
                   </div>
                 )}

@@ -547,8 +547,13 @@ router.post('/:classId/end', async (req, res) => {
       })
     }
 
-    // Check if user is the teacher
-    if (roomClass.teacherId.toString() !== teacherId) {
+    // Check if user is the teacher - convert both to strings for comparison
+    if (roomClass.teacherId.toString() !== teacherId.toString()) {
+      console.log('❌ Teacher ID mismatch:', {
+        roomClassTeacherId: roomClass.teacherId.toString(),
+        providedTeacherId: teacherId.toString(),
+        match: roomClass.teacherId.toString() === teacherId.toString()
+      })
       return res.status(403).json({
         success: false,
         error: 'Only the teacher can end the class'
@@ -609,6 +614,7 @@ router.post('/:classId/end', async (req, res) => {
       io.to(roomClass.sessionId.toString()).emit('class-ended', {
         classId: classId,
         roomId: roomClass.roomId,
+        teacherId: teacherId, // Include teacherId to identify who ended the class
         message: message || 'Class has been ended by the teacher',
         endedAt: roomClass.endTime.toISOString(),
         redirectTo: '/student-dashboard'
@@ -618,6 +624,7 @@ router.post('/:classId/end', async (req, res) => {
       io.to(roomClass.sessionId.toString()).emit('teacher-ended-class', {
         classId: classId,
         roomId: roomClass.roomId,
+        teacherId: teacherId, // Include teacherId for consistency
         message: message || 'Class has been ended by the teacher'
       })
       

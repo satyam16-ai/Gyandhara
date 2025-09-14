@@ -109,7 +109,7 @@ const parentSchema = new mongoose.Schema({
   relationship: {
     type: String,
     enum: ['father', 'mother', 'guardian', 'relative'],
-    default: 'parent'
+    default: 'guardian'
   },
   permissions: {
     viewProgress: {

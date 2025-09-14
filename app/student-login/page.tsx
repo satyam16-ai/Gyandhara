@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from '../../src/contexts/ThemeContext'
 import Link from 'next/link'
 
 export default function StudentLoginPage() {
+  const { isDarkMode } = useTheme()
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -144,24 +146,24 @@ export default function StudentLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-100 via-teal-50 to-cyan-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8 bg-white/80 backdrop-blur-lg p-8 rounded-3xl shadow-2xl border border-white/20 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-100 via-teal-50 to-cyan-100 dark:from-black dark:via-gray-900 dark:to-black flex items-center justify-center p-4 sm:p-6 lg:p-8 transition-colors duration-300">
+      <div className="w-full max-w-md sm:max-w-lg space-y-6 sm:space-y-8 bg-white/80 dark:bg-gray-900/90 backdrop-blur-lg p-6 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700/50 relative overflow-hidden">
         {/* Decorative background elements */}
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-emerald-400/10 to-teal-400/10 rounded-3xl"></div>
-        <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-teal-400/20 to-cyan-400/20 rounded-full blur-xl"></div>
-        <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-gradient-to-br from-emerald-400/20 to-teal-400/20 rounded-full blur-xl"></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-emerald-400/10 dark:from-emerald-500/5 to-teal-400/10 dark:to-teal-500/5 rounded-2xl sm:rounded-3xl"></div>
+        <div className="absolute -top-2 -right-2 sm:-top-4 sm:-right-4 w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-teal-400/20 dark:from-teal-500/10 to-cyan-400/20 dark:to-cyan-500/10 rounded-full blur-xl"></div>
+        <div className="absolute -bottom-2 -left-2 sm:-bottom-4 sm:-left-4 w-20 h-20 sm:w-32 sm:h-32 bg-gradient-to-br from-emerald-400/20 dark:from-emerald-500/10 to-teal-400/20 dark:to-teal-500/10 rounded-full blur-xl"></div>
         
         {/* Content */}
         <div className="relative z-10">
           {/* Header */}
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-3xl shadow-lg">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-2xl sm:text-3xl shadow-lg">
               🎓
             </div>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-900 to-teal-700 bg-clip-text text-transparent mb-3">
+            <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-emerald-900 to-teal-700 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent mb-2 sm:mb-3">
               Student {isRegister ? 'Registration' : 'Login'}
             </h2>
-            <p className="text-gray-600 text-sm leading-relaxed">
+            <p className="text-gray-600 dark:text-gray-200 text-sm leading-relaxed px-2">
               {isRegister 
                 ? 'Create your student account to start learning'
                 : 'Welcome back! Access your learning dashboard'
@@ -171,20 +173,20 @@ export default function StudentLoginPage() {
 
           {/* Error Alert */}
           {error && (
-            <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200/60 text-red-700 px-4 py-3 rounded-xl backdrop-blur-sm">
+            <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 border border-red-200/60 dark:border-red-700/50 text-red-700 dark:text-red-300 px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl backdrop-blur-sm">
               <div className="flex items-center">
                 <span className="text-red-500 mr-2">⚠️</span>
-                {error}
+                <span className="text-xs sm:text-sm">{error}</span>
               </div>
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={isRegister ? handleRegister : handleLogin} className="space-y-6">
+          <form onSubmit={isRegister ? handleRegister : handleLogin} className="space-y-4 sm:space-y-6">
             {isRegister && (
               <>
                 <div>
-                  <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="name" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Full Name
                   </label>
                   <input
@@ -194,13 +196,13 @@ export default function StudentLoginPage() {
                     required
                     value={registerData.name}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white/50 backdrop-blur-sm transition-all duration-200 hover:bg-white/70"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent backdrop-blur-sm transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-600/70 text-sm sm:text-base"
                     placeholder="Enter your full name"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Email Address
                   </label>
                   <input
@@ -210,13 +212,13 @@ export default function StudentLoginPage() {
                     required
                     value={registerData.email}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white/50 backdrop-blur-sm transition-all duration-200 hover:bg-white/70"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent backdrop-blur-sm transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-600/70 text-sm sm:text-base"
                     placeholder="Enter your email"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="mobile" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="mobile" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Mobile Number
                   </label>
                   <input
@@ -226,10 +228,10 @@ export default function StudentLoginPage() {
                     required
                     value={registerData.mobile}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white/50 backdrop-blur-sm transition-all duration-200 hover:bg-white/70"
-                    placeholder="Enter mobile number (e.g., +1234567890)"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent backdrop-blur-sm transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-600/70 text-sm sm:text-base"
+                    placeholder="Enter mobile number"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     📱 Include country code for SMS notifications
                   </p>
                 </div>
@@ -237,7 +239,7 @@ export default function StudentLoginPage() {
             )}
 
             <div>
-              <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="username" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Username
               </label>
               <input
@@ -247,13 +249,13 @@ export default function StudentLoginPage() {
                 required
                 value={isRegister ? registerData.username : formData.username}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white/50 backdrop-blur-sm transition-all duration-200 hover:bg-white/70"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent backdrop-blur-sm transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-600/70 text-sm sm:text-base"
                 placeholder="Enter your student username"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Password
               </label>
               <input
@@ -263,14 +265,14 @@ export default function StudentLoginPage() {
                 required
                 value={isRegister ? registerData.password : formData.password}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white/50 backdrop-blur-sm transition-all duration-200 hover:bg-white/70"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent backdrop-blur-sm transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-600/70 text-sm sm:text-base"
                 placeholder="Enter your password"
               />
             </div>
 
             {isRegister && (
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Confirm Password
                 </label>
                 <input
@@ -280,7 +282,7 @@ export default function StudentLoginPage() {
                   required
                   value={registerData.confirmPassword}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white/50 backdrop-blur-sm transition-all duration-200 hover:bg-white/70"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent backdrop-blur-sm transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-600/70 text-sm sm:text-base"
                   placeholder="Confirm your password"
                 />
               </div>
@@ -289,7 +291,7 @@ export default function StudentLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className={`appearance-none border-0 focus:outline-none w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
+              className={`appearance-none border-0 focus:outline-none w-full py-3 sm:py-4 px-4 sm:px-6 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl text-sm sm:text-base ${
                 loading
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-700'
@@ -297,8 +299,8 @@ export default function StudentLoginPage() {
             >
               {loading ? (
                 <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  {isRegister ? 'Creating Account...' : 'Signing In...'}
+                  <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
+                  <span className="text-sm sm:text-base">{isRegister ? 'Creating Account...' : 'Signing In...'}</span>
                 </div>
               ) : (
                 <div className="flex items-center justify-center space-x-2">
@@ -316,7 +318,7 @@ export default function StudentLoginPage() {
                 setIsRegister(!isRegister)
                 setError('')
               }}
-              className="text-sm bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 font-medium"
+              className="text-xs sm:text-sm bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 font-medium px-2"
             >
               {isRegister 
                 ? 'Already have a student account? Sign in' 
@@ -326,26 +328,34 @@ export default function StudentLoginPage() {
           </div>
 
           {/* Navigation */}
-          <div className="text-center pt-4 border-t border-gray-200/50 space-y-2">
+          <div className="text-center pt-3 sm:pt-4 border-t border-gray-200/50 dark:border-gray-700/50 space-y-2">
             <Link
               href="/"
-              className="block text-sm text-gray-600 hover:text-gray-800 transition-colors font-medium"
+              className="block text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors font-medium"
             >
               ← Back to role selection
             </Link>
-            <Link
-              href="/teacher-login"
-              className="block text-sm text-gray-600 hover:text-gray-800 transition-colors font-medium"
-            >
-              Teacher? Login here →
-            </Link>
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-1 sm:space-y-0 sm:space-x-4">
+              <Link
+                href="/teacher-login"
+                className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors font-medium"
+              >
+                Teacher? Login here →
+              </Link>
+              <Link
+                href="/parent-login"
+                className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors font-medium"
+              >
+                Parent? Login here →
+              </Link>
+            </div>
           </div>
 
           {/* Admin Portal Link */}
-          <div className="text-center text-xs text-gray-500">
+          <div className="text-center text-xs text-gray-500 dark:text-gray-500">
             <Link 
               href="/admin-login"
-              className="hover:text-gray-700 transition-colors inline-flex items-center space-x-1"
+              className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors inline-flex items-center space-x-1"
             >
               <span>🔐</span>
               <span>Admin Portal</span>

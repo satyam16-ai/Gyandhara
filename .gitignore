@@ -226,3 +226,4 @@ docker-compose.override.yml
 .cache/
 .eslintcache
 .stylelintcache
+.vercel

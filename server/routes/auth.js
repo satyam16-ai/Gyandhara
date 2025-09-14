@@ -42,13 +42,13 @@ const registerValidation = [
   body('mobile').isMobilePhone().withMessage('Valid mobile number is required'),
   body('username').trim().isLength({ min: 3, max: 20 }).isAlphanumeric().withMessage('Username must be 3-20 alphanumeric characters'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('role').isIn(['teacher', 'student']).withMessage('Role must be teacher or student')
+  body('role').isIn(['teacher', 'student', 'parent']).withMessage('Role must be teacher, student, or parent')
 ]
 
 const loginValidation = [
   body('username').trim().notEmpty().withMessage('Username is required'),
   body('password').notEmpty().withMessage('Password is required'),
-  body('role').isIn(['teacher', 'student']).withMessage('Role must be teacher or student')
+  body('role').isIn(['teacher', 'student', 'parent']).withMessage('Role must be teacher, student, or parent')
 ]
 
 const handleValidationErrors = (req, res, next) => {

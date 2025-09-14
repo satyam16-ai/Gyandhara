@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from '../../src/contexts/ThemeContext'
 
 function PasswordStrength({ value }: { value: string }) {
   if (!value) return null
@@ -28,6 +29,7 @@ function PasswordStrength({ value }: { value: string }) {
 }
 
 export default function AdminLogin() {
+  const { isDarkMode } = useTheme()
   const router = useRouter()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -99,22 +101,22 @@ export default function AdminLogin() {
   // Prevent hydration mismatch by not rendering content until mounted
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-full max-w-md p-8 rounded-2xl shadow-2xl bg-white border border-gray-200">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 transition-colors duration-300">
+        <div className="w-full max-w-md p-8 rounded-2xl shadow-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
           <div className="animate-pulse">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gray-300 rounded-lg"></div>
+                <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
                 <div>
-                  <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
-                  <div className="h-3 bg-gray-300 rounded w-16"></div>
+                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-2"></div>
+                  <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
                 </div>
               </div>
             </div>
             <div className="space-y-4">
-              <div className="h-12 bg-gray-300 rounded-lg"></div>
-              <div className="h-12 bg-gray-300 rounded-lg"></div>
-              <div className="h-12 bg-gray-300 rounded-lg"></div>
+              <div className="h-12 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+              <div className="h-12 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+              <div className="h-12 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
             </div>
           </div>
         </div>
@@ -123,7 +125,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 dark:from-black dark:via-gray-900 dark:to-black relative overflow-hidden transition-colors duration-300">
       {/* Modern geometric background */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-20 w-64 h-64 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 rounded-full blur-3xl"></div>

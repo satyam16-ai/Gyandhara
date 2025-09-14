@@ -5,7 +5,7 @@ import LandingPage from '../src/components/LandingPage'
 import { useRouter } from 'next/navigation'
 
 export default function Home() {
-  const [selectedRole, setSelectedRole] = useState<'teacher' | 'student' | null>(null)
+  const [selectedRole, setSelectedRole] = useState<'teacher' | 'student' | 'parent' | null>(null)
   const router = useRouter()
 
   // Handle navigation in useEffect to avoid render-time side effects
@@ -14,6 +14,8 @@ export default function Home() {
       router.push('/teacher-login')
     } else if (selectedRole === 'student') {
       router.push('/student-login')
+    } else if (selectedRole === 'parent') {
+      router.push('/parent-login')
     }
   }, [selectedRole, router])
 

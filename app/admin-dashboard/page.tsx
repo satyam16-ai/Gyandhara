@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from '../../src/contexts/ThemeContext'
 
 interface User {
   _id: string
@@ -28,6 +29,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
+  const { isDarkMode } = useTheme()
   const [users, setUsers] = useState<User[]>([])
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -43,7 +45,7 @@ export default function AdminDashboard() {
     parentName: '',
     parentEmail: '',
     parentMobile: '',
-    relationship: 'parent'
+    relationship: 'guardian'
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -145,7 +147,7 @@ export default function AdminDashboard() {
           parentName: '',
           parentEmail: '',
           parentMobile: '',
-          relationship: 'parent'
+          relationship: 'guardian'
         })
         setShowCreateUser(false)
         loadDashboardData()
@@ -332,49 +334,69 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-700">Loading dashboard...</p>
+          <p className="text-gray-700 dark:text-gray-300">Loading dashboard...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen transition-colors duration-300 bg-gray-50">
-      {/* Header */}
-      <header className="border-b transition-colors bg-white border-gray-200">
+    <div className="min-h-screen transition-colors duration-300 bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-black dark:via-gray-900 dark:to-black">{/* Enhanced Header */}
+      <header className="border-b transition-colors bg-white/80 dark:bg-gray-900/90 backdrop-blur-sm border-purple-200/50 dark:border-gray-700/50 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">
-                🔐 VoiceBoard Admin
-              </h1>
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center space-x-4">
+              {/* GYANDHARA Logo */}
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300">
+                  <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                    GYANDHARA
+                  </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">Admin Console</p>
+                </div>
+              </div>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3 px-4 py-2 rounded-xl bg-blue-50">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+            <div className="flex items-center space-x-6">
+              {/* Real-time Status */}
+              <div className="hidden md:flex items-center space-x-2 px-4 py-2 bg-green-100 dark:bg-green-900/50 rounded-xl border border-green-200 dark:border-green-700">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-green-700 dark:text-green-300">System Online</span>
+              </div>
+
+              {/* Admin Profile */}
+              <div className="flex items-center space-x-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 border border-blue-200/50 dark:border-gray-600 shadow-md hover:shadow-lg transition-all duration-300">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                   {adminUser?.name?.charAt(0)?.toUpperCase() || 'A'}
                 </div>
                 <div className="text-sm">
-                  <p className="font-semibold text-gray-900">
-                    {adminUser?.name || 'Admin'}
+                  <p className="font-bold text-gray-900 dark:text-white">
+                    {adminUser?.name || 'Administrator'}
                   </p>
-                  <p className="text-xs text-gray-600">
-                    Administrator
+                  <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                    🔐 Super Admin
                   </p>
                 </div>
               </div>
               
+              {/* Logout Button */}
               <button
                 type="button"
                 onClick={handleLogout}
-                className="appearance-none border-0 focus:outline-none bg-gradient-to-r from-red-400 to-red-500 text-black px-6 py-3 rounded-xl font-bold hover:from-red-500 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 flex items-center space-x-2 border-2 border-red-300 hover:border-red-400"
+                className="appearance-none border-0 focus:outline-none bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-3 rounded-2xl font-bold hover:from-red-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 flex items-center space-x-2 border-2 border-red-300/50 hover:border-red-400"
                 title="Logout from Admin Portal"
               >
-                <span className="text-xl">🚪</span>
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+                </svg>
                 <span>Logout</span>
               </button>
             </div>
@@ -385,7 +407,7 @@ export default function AdminDashboard() {
       {/* Alerts */}
       {error && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-          <div className="border-l-4 border-red-500 px-4 py-3 rounded-lg shadow-md bg-red-50 text-red-700">
+          <div className="border-l-4 border-red-500 px-4 py-3 rounded-lg shadow-md bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <span className="text-red-500 mr-3 text-lg">⚠️</span>
@@ -393,7 +415,7 @@ export default function AdminDashboard() {
               </div>
               <button 
                 onClick={() => setError('')} 
-                className="font-bold text-xl hover:scale-110 transition-transform text-red-600 hover:text-red-700"
+                className="font-bold text-xl hover:scale-110 transition-transform text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
               >
                 ×
               </button>
@@ -404,7 +426,7 @@ export default function AdminDashboard() {
       
       {success && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-          <div className="border-l-4 border-green-500 px-4 py-3 rounded-lg shadow-md bg-green-50 text-green-700">
+          <div className="border-l-4 border-green-500 px-4 py-3 rounded-lg shadow-md bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <span className="text-green-500 mr-3 text-lg">✅</span>
@@ -412,7 +434,7 @@ export default function AdminDashboard() {
               </div>
               <button 
                 onClick={() => setSuccess('')} 
-                className="font-bold text-xl hover:scale-110 transition-transform text-green-600 hover:text-green-700"
+                className="font-bold text-xl hover:scale-110 transition-transform text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
               >
                 ×
               </button>
@@ -421,29 +443,34 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Navigation Tabs */}
-      <nav className="border-b border-gray-200">
+      {/* Enhanced Navigation Tabs */}
+      <nav className="border-b border-purple-200/50 dark:border-gray-600/50 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-1">
+          <div className="flex space-x-2 py-2">
             {[
-              { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-              { id: 'users', label: 'Users', icon: '👥' },
-              { id: 'sessions', label: 'Sessions', icon: '🎓' },
-              { id: 'settings', label: 'Settings', icon: '⚙️' }
+              { id: 'dashboard', label: 'Dashboard', icon: '📊', color: 'purple' },
+              { id: 'users', label: 'User Management', icon: '👥', color: 'blue' },
+              { id: 'sessions', label: 'Live Sessions', icon: '🎓', color: 'green' },
+              { id: 'settings', label: 'Settings', icon: '⚙️', color: 'gray' }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative py-4 px-6 font-semibold text-sm transition-all duration-300 rounded-t-lg ${
+                className={`relative py-4 px-6 font-bold text-sm transition-all duration-300 rounded-2xl transform hover:scale-105 flex items-center space-x-3 border-2 ${
                   activeTab === tab.id
-                    ? 'bg-white text-blue-600 border-b-2 border-blue-500 shadow-md'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                } transform hover:scale-105 flex items-center space-x-2`}
+                    ? `bg-gradient-to-r ${
+                        tab.color === 'purple' ? 'from-purple-500 to-purple-600 border-purple-300' :
+                        tab.color === 'blue' ? 'from-blue-500 to-blue-600 border-blue-300' :
+                        tab.color === 'green' ? 'from-green-500 to-green-600 border-green-300' :
+                        'from-gray-500 to-gray-600 border-gray-300'
+                      } text-white shadow-lg`
+                    : `text-gray-600 hover:text-gray-800 bg-white/80 border-gray-200 hover:border-${tab.color}-300 hover:bg-${tab.color}-50 shadow-md hover:shadow-lg`
+                }`}
               >
-                <span className="text-lg">{tab.icon}</span>
+                <span className="text-xl">{tab.icon}</span>
                 <span>{tab.label}</span>
                 {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500"></div>
+                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-white rounded-full shadow-lg"></div>
                 )}
               </button>
             ))}
@@ -457,7 +484,7 @@ export default function AdminDashboard() {
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && stats && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-blue-600">
               Platform Overview
             </h2>
             
@@ -510,7 +537,7 @@ export default function AdminDashboard() {
         {activeTab === 'users' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-blue-600">
                 👥 User Management
               </h2>
               <div className="flex flex-wrap gap-3">
@@ -596,185 +623,245 @@ export default function AdminDashboard() {
 
             {/* Create User Modal */}
             {showCreateUser && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="w-full max-w-lg p-6 rounded-xl shadow-2xl bg-white border border-gray-200">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-gray-900">
-                      👤 Create New User
-                    </h3>
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto p-8 rounded-2xl shadow-2xl bg-gradient-to-br from-white via-blue-50 to-purple-50 border border-white/20 backdrop-blur-sm">
+                  <div className="flex justify-between items-center mb-8">
+                    <div>
+                      <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
+                        ✨ Create New User
+                      </h3>
+                      <p className="text-gray-600">Add a new student, teacher, or admin to GYANDHARA platform</p>
+                    </div>
                     <button
                       onClick={() => setShowCreateUser(false)}
-                      className="p-2 rounded-lg transition-colors hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+                      className="p-3 rounded-xl transition-all duration-300 hover:bg-red-100 text-gray-500 hover:text-red-600 hover:rotate-90 transform"
                     >
-                      ✕
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
                     </button>
                   </div>
                   
-                  <form onSubmit={handleCreateUser} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-700">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Enter full name"
-                        value={newUser.name}
-                        onChange={(e) => setNewUser({...newUser, name: e.target.value})}
-                        className="w-full px-4 py-3 border rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-gray-900 placeholder-gray-500"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-700">
-                        Email Address *
-                      </label>
-                      <input
-                        type="email"
-                        placeholder="Enter email address"
-                        value={newUser.email}
-                        onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                        className="w-full px-4 py-3 border rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-gray-900 placeholder-gray-500"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-700">
-                        Mobile Number *
-                      </label>
-                      <input
-                        type="tel"
-                        placeholder="Enter mobile number (e.g., +1234567890)"
-                        value={newUser.mobile}
-                        onChange={(e) => setNewUser({...newUser, mobile: e.target.value})}
-                        className="w-full px-4 py-3 border rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-gray-900 placeholder-gray-500"
-                        required
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        📱 Include country code (e.g., +91 for India, +1 for US)
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-700">
-                        Role *
-                      </label>
-                      <select
-                        value={newUser.role}
-                        onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                        className="w-full px-4 py-3 border rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-black"
-                      >
-                        <option value="student">🎓 Student</option>
-                        <option value="teacher">👨‍🏫 Teacher</option>
-                        <option value="admin">🔐 Admin</option>
-                      </select>
+                  <form onSubmit={handleCreateUser} className="space-y-8">
+                    {/* Student/Teacher/Admin Information Section */}
+                    <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/20 shadow-lg">
+                      <h4 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mr-3">
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        User Information
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            👤 Full Name *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Enter full name"
+                            value={newUser.name}
+                            onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                            className="w-full px-4 py-3 border-2 rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 bg-white/90 border-gray-200 text-gray-900 placeholder-gray-400 hover:border-blue-300"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            📧 Email Address *
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="Enter email address"
+                            value={newUser.email}
+                            onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                            className="w-full px-4 py-3 border-2 rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 bg-white/90 border-gray-200 text-gray-900 placeholder-gray-400 hover:border-blue-300"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            📱 Mobile Number *
+                          </label>
+                          <input
+                            type="tel"
+                            placeholder="e.g., +919876543210"
+                            value={newUser.mobile}
+                            onChange={(e) => setNewUser({...newUser, mobile: e.target.value})}
+                            className="w-full px-4 py-3 border-2 rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 bg-white/90 border-gray-200 text-gray-900 placeholder-gray-400 hover:border-blue-300"
+                            required
+                          />
+                          <p className="text-xs text-gray-500 flex items-center">
+                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            </svg>
+                            Include country code (e.g., +91 for India)
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            🎭 Role *
+                          </label>
+                          <select
+                            value={newUser.role}
+                            onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                            className="w-full px-4 py-3 border-2 rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 bg-white/90 border-gray-200 text-gray-900 hover:border-blue-300"
+                          >
+                            <option value="student">🎓 Student</option>
+                            <option value="teacher">👨‍🏫 Teacher</option>
+                            <option value="admin">🔐 Admin</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Parent Details Section - Only show for students */}
                     {newUser.role === 'student' && (
-                      <div className="border-t pt-4 mt-4">
-                        <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-2xl border-2 border-green-200/50 shadow-lg">
+                        <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                          <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mr-3">
+                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+                            </svg>
+                          </div>
                           👨‍👩‍👧‍👦 Parent/Guardian Information
                         </h4>
-                        <p className="text-sm text-gray-600 mb-4">
-                          Parent account will be automatically created to monitor student progress.
-                        </p>
+                        <div className="bg-white/60 backdrop-blur-sm p-4 rounded-xl mb-6 border border-white/30">
+                          <p className="text-sm text-gray-700 flex items-center">
+                            <svg className="w-4 h-4 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            <strong>Auto-Creation:</strong> Parent account will be automatically created with login credentials sent via email and SMS.
+                          </p>
+                        </div>
                         
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-2 text-gray-700">
-                              Parent/Guardian Name *
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              👤 Parent/Guardian Name *
                             </label>
                             <input
                               type="text"
                               placeholder="Enter parent/guardian full name"
                               value={newUser.parentName}
                               onChange={(e) => setNewUser({...newUser, parentName: e.target.value})}
-                              className="w-full px-4 py-3 border rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+                              className="w-full px-4 py-3 border-2 rounded-xl transition-all duration-300 focus:ring-4 focus:ring-green-500/20 focus:border-green-500 bg-white/90 border-gray-200 text-gray-900 placeholder-gray-400 hover:border-green-300"
                               required={newUser.role === 'student'}
                             />
                           </div>
                           
-                          <div>
-                            <label className="block text-sm font-medium mb-2 text-gray-700">
-                              Parent Email Address *
+                          <div className="space-y-2">
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              📧 Parent Email Address *
                             </label>
                             <input
                               type="email"
                               placeholder="Enter parent email address"
                               value={newUser.parentEmail}
                               onChange={(e) => setNewUser({...newUser, parentEmail: e.target.value})}
-                              className="w-full px-4 py-3 border rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+                              className="w-full px-4 py-3 border-2 rounded-xl transition-all duration-300 focus:ring-4 focus:ring-green-500/20 focus:border-green-500 bg-white/90 border-gray-200 text-gray-900 placeholder-gray-400 hover:border-green-300"
                               required={newUser.role === 'student'}
                             />
                           </div>
                           
-                          <div>
-                            <label className="block text-sm font-medium mb-2 text-gray-700">
-                              Parent Mobile Number *
+                          <div className="space-y-2">
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              📱 Parent Mobile Number *
                             </label>
                             <input
                               type="tel"
-                              placeholder="Enter parent mobile number (e.g., +1234567890)"
+                              placeholder="e.g., +919876543210"
                               value={newUser.parentMobile}
                               onChange={(e) => setNewUser({...newUser, parentMobile: e.target.value})}
-                              className="w-full px-4 py-3 border rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+                              className="w-full px-4 py-3 border-2 rounded-xl transition-all duration-300 focus:ring-4 focus:ring-green-500/20 focus:border-green-500 bg-white/90 border-gray-200 text-gray-900 placeholder-gray-400 hover:border-green-300"
                               required={newUser.role === 'student'}
                             />
-                            <p className="text-xs text-gray-500 mt-1">
-                              📱 Parent will receive login credentials via email and SMS
+                            <p className="text-xs text-green-600 flex items-center">
+                              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                              </svg>
+                              Parent will receive login credentials via email and SMS
                             </p>
                           </div>
                           
-                          <div>
-                            <label className="block text-sm font-medium mb-2 text-gray-700">
-                              Relationship to Student
+                          <div className="space-y-2">
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              🤝 Relationship to Student
                             </label>
                             <select
                               value={newUser.relationship}
                               onChange={(e) => setNewUser({ ...newUser, relationship: e.target.value })}
-                              className="w-full px-4 py-3 border rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-black"
+                              className="w-full px-4 py-3 border-2 rounded-xl transition-all duration-300 focus:ring-4 focus:ring-green-500/20 focus:border-green-500 bg-white/90 border-gray-200 text-gray-900 hover:border-green-300"
                             >
-                              <option value="parent">👨‍👩‍👧‍👦 Parent</option>
                               <option value="guardian">🏠 Guardian</option>
                               <option value="father">👨 Father</option>
                               <option value="mother">👩 Mother</option>
-                              <option value="sibling">👫 Sibling</option>
-                              <option value="other">🤝 Other</option>
+                              <option value="relative">🤝 Relative</option>
                             </select>
                           </div>
                         </div>
                         
-                        <div className="p-4 rounded-lg bg-green-50 mt-4">
-                          <p className="text-sm text-green-700">
-                            🎯 <strong>Parent Portal Features:</strong> Progress tracking, attendance monitoring, teacher communication, and real-time notifications.
-                          </p>
+                        <div className="bg-gradient-to-r from-green-100 to-blue-100 p-4 rounded-xl mt-6 border border-green-200">
+                          <h5 className="font-semibold text-gray-800 mb-2 flex items-center">
+                            <svg className="w-4 h-4 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            🎯 Parent Portal Features
+                          </h5>
+                          <ul className="text-sm text-gray-700 space-y-1">
+                            <li className="flex items-center"><span className="text-green-500 mr-2">•</span> Real-time student progress tracking</li>
+                            <li className="flex items-center"><span className="text-blue-500 mr-2">•</span> Attendance monitoring and reports</li>
+                            <li className="flex items-center"><span className="text-purple-500 mr-2">•</span> Direct teacher communication</li>
+                            <li className="flex items-center"><span className="text-pink-500 mr-2">•</span> Instant notifications and updates</li>
+                          </ul>
                         </div>
                       </div>
                     )}
 
-                    <div className="p-4 rounded-lg bg-blue-50">
-                      <p className="text-sm text-blue-700">
-                        💡 <strong>Note:</strong> A temporary username and password will be generated and sent to both the user's email address and mobile number via SMS. 
-                        The user will be required to change the password on first login.
-                      </p>
+                    {/* Information Note */}
+                    <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-6 rounded-2xl border-2 border-blue-200/50">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-gray-800 mb-2">💡 Automatic Account Setup</h5>
+                          <p className="text-sm text-gray-700 leading-relaxed">
+                            A temporary <strong>username</strong> and <strong>password</strong> will be automatically generated and sent to the user's email address and mobile number via SMS. 
+                            Users will be required to change their password on first login for security.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                     
-                    <div className="flex space-x-3 pt-6">
+                    {/* Action Buttons */}
+                    <div className="flex space-x-4 pt-4">
                       <button
                         type="submit"
-                        className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-black py-4 px-6 rounded-xl font-bold hover:from-green-600 hover:to-green-700 transition-all duration-300 focus:ring-4 focus:ring-green-500/50 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
+                        className="flex-1 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 text-white py-4 px-8 rounded-2xl font-bold hover:from-green-600 hover:via-blue-600 hover:to-purple-600 transition-all duration-300 focus:ring-4 focus:ring-blue-500/50 transform hover:scale-105 active:scale-95 shadow-xl hover:shadow-2xl flex items-center justify-center space-x-3"
                       >
-                        <span>✅</span>
-                        <span>Create User</span>
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                        </svg>
+                        <span>Create User Account</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowCreateUser(false)}
-                        className="flex-1 py-4 px-6 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 active:scale-95 bg-gray-200 text-gray-700 hover:bg-gray-300 border border-gray-300"
+                        className="px-8 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 active:scale-95 bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-gray-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-3"
                       >
-                        ❌ Cancel
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                        <span>Cancel</span>
                       </button>
                     </div>
                   </form>
@@ -1099,7 +1186,7 @@ export default function AdminDashboard() {
         {/* Sessions Tab */}
         {activeTab === 'sessions' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-blue-600">
               🎓 Session Management
             </h2>
             <div className="p-8 text-center rounded-xl border-2 bg-blue-50 border-blue-200 text-gray-700">
@@ -1117,7 +1204,7 @@ export default function AdminDashboard() {
         {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-blue-600">
               ⚙️ Platform Settings
             </h2>
             <div className="p-8 text-center rounded-xl border-2 bg-purple-50 border-purple-200 text-gray-700">
