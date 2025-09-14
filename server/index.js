@@ -105,6 +105,24 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/room-classes', roomClassRoutes)
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Gyandhara Educational Platform Backend API',
+    version: '2.0.0',
+    status: 'running',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/health',
+      api_health: '/api/health',
+      admin: '/api/admin-secure/*',
+      auth: '/api/auth/*',
+      classrooms: '/api/classrooms/*',
+      room_classes: '/api/room-classes/*'
+    }
+  })
+})
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
