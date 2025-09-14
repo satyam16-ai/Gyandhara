@@ -3,8 +3,9 @@ services:
     name: gyandhara-backend
     env: node
     plan: free
+    rootDir: server
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: node index.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV

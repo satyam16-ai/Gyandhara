@@ -7,7 +7,7 @@
 
 ## Step 2: Deploy Backend to Render
 
-### Option A: Direct Deploy (Recommended)
+### Option A: Manual Deploy (Recommended)
 1. **Create New Web Service**
    - Click "New +" → "Web Service"
    - Choose "Build and deploy from a Git repository"
@@ -17,9 +17,10 @@
    - **Name**: `gyandhara-backend`
    - **Environment**: `Node`
    - **Region**: Choose closest to your users
-   - **Branch**: `main` or `feature/parent-portal-system`
+   - **Branch**: `feature/parent-portal-system` 
+   - **Root Directory**: `server` (IMPORTANT!)
    - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
+   - **Start Command**: `node index.js`
 
 3. **Set Environment Variables**
    Add these in Render dashboard:
