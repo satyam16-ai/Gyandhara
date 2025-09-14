@@ -7,6 +7,7 @@ const helmet = require('helmet')
 const { connectDB } = require('./database')
 
 // Updated: 2025-09-15 - Enhanced validation and debugging
+// Force deploy from main branch - Sep 15, 2025
 const { 
   User, 
   ClassSession, 

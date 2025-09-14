@@ -3,10 +3,11 @@ services:
     name: gyandhara-backend
     env: node
     plan: free
-    repo: https://github.com/satyam16-ai/voiceboard-educational-platform
+    repo: https://github.com/satyam16-ai/voiceboard-educational-platform.git
     branch: main
+    autoDeploy: true
     rootDir: server
-    buildCommand: npm install
+    buildCommand: npm install --production
     startCommand: node index.js
     healthCheckPath: /health
     envVars:
