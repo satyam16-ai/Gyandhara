@@ -5,6 +5,8 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 const helmet = require('helmet')
 const { connectDB } = require('./database')
+
+// Updated: 2025-09-15 - Enhanced validation and debugging
 const { 
   User, 
   ClassSession, 
