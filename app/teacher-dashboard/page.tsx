@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '../../src/contexts/ThemeContext'
-import TeacherDashboard from '@/components/NewTeacherDashboard'
+import NewTeacherDashboard from '@/components/NewTeacherDashboard'
 
 interface User {
   id: string
@@ -77,9 +77,9 @@ export default function TeacherDashboardPage() {
     return null
   }
 
-  // Always show the comprehensive TeacherDashboard component
+  // Always show the comprehensive NewTeacherDashboard component
   return (
-    <TeacherDashboard
+    <NewTeacherDashboard
       user={user}
     />
   )
