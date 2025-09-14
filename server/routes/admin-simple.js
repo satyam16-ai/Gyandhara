@@ -174,8 +174,18 @@ router.post('/users', async (req, res) => {
   try {
     const { name, email, mobile, role = 'student', parentName, parentEmail, parentMobile, relationship = 'guardian' } = req.body
 
-    // Validate required fields
-    if (!name || !email || !mobile) {
+    console.log('Received user creation request:', { name, email, mobile, role, parentName, parentEmail, parentMobile })
+
+    // Validate required fields (check for empty strings and whitespace)
+    if (!name || !name.trim() || !email || !email.trim() || !mobile || !mobile.trim()) {
+      console.log('Validation failed:', { 
+        name: !!name, 
+        nameAfterTrim: !!(name && name.trim()), 
+        email: !!email, 
+        emailAfterTrim: !!(email && email.trim()), 
+        mobile: !!mobile, 
+        mobileAfterTrim: !!(mobile && mobile.trim()) 
+      })
       return res.status(400).json({ error: 'Name, email, and mobile number are required' })
     }
 

@@ -122,17 +122,23 @@ export default function AdminDashboard() {
     setError('')
     setSuccess('')
 
-    // Client-side validation
-    if (!newUser.name?.trim()) {
-      setError('Name is required')
+    console.log('Form data before validation:', newUser)
+
+    // Client-side validation with explicit checks
+    const trimmedName = newUser.name?.trim()
+    const trimmedEmail = newUser.email?.trim()
+    const trimmedMobile = newUser.mobile?.trim()
+
+    if (!trimmedName) {
+      setError('Name is required and cannot be empty')
       return
     }
-    if (!newUser.email?.trim()) {
-      setError('Email is required')
+    if (!trimmedEmail) {
+      setError('Email is required and cannot be empty')
       return
     }
-    if (!newUser.mobile?.trim()) {
-      setError('Mobile number is required')
+    if (!trimmedMobile) {
+      setError('Mobile number is required and cannot be empty')
       return
     }
     
@@ -157,9 +163,9 @@ export default function AdminDashboard() {
 
     // Sanitize the data before sending
     const userData = {
-      name: newUser.name.trim(),
-      email: newUser.email.trim().toLowerCase(),
-      mobile: newUser.mobile.trim(),
+      name: trimmedName,
+      email: trimmedEmail.toLowerCase(),
+      mobile: trimmedMobile,
       role: newUser.role,
       ...(newUser.role === 'student' && newUser.parentName?.trim() && {
         parentName: newUser.parentName.trim(),
@@ -169,7 +175,7 @@ export default function AdminDashboard() {
       })
     }
 
-    console.log('Sending user data:', userData) // Debug log
+    console.log('Sanitized user data being sent:', userData)
 
     try {
       const response = await fetch('/api/admin-secure/users', {
