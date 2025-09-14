@@ -1,7 +1,7 @@
 // WebSocket service for real-time communication with MongoDB backend
 
 import { io, Socket } from 'socket.io-client'
-import { StrokeData, ChatMessage } from '@/types'
+import { StrokeData, ChatMessage } from '../types'
 
 class WebSocketService {
   private socket: Socket | null = null

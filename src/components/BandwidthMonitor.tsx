@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { BandwidthSettings } from '@/types'
+import { BandwidthSettings } from '../types'
 
 interface BandwidthMonitorProps {
   settings: BandwidthSettings

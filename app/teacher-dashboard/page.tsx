@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '../../src/contexts/ThemeContext'
-import NewTeacherDashboard from '@/components/NewTeacherDashboard'
+import NewTeacherDashboard from '../../src/components/NewTeacherDashboard'
 
 interface User {
   id: string

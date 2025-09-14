@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import NewTeacherDashboard from '@/components/NewTeacherDashboard'
+import NewTeacherDashboard from '../../../src/components/NewTeacherDashboard'
 
 interface User {
   id: string

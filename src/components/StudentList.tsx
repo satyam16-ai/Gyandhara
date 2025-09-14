@@ -1,6 +1,13 @@
 'use client'
 
-import { Student } from '@/types'
+import React, { useEffect, useState } from 'react'
+import { useTheme } from '../contexts/ThemeContext'
+import { Student } from '../types'
+import { 
+  Users,
+  UserCheck,
+  UserX
+} from 'lucide-react'
 
 interface StudentListProps {
   students: Student[]

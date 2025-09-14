@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client'
-import { StrokeData, ChatMessage } from '@/types'
+import { StrokeData, ChatMessage } from '../types'
 
 class GyaandharaSocket {
   private socket: Socket | null = null
