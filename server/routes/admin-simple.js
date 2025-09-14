@@ -204,8 +204,15 @@ router.post('/users', async (req, res) => {
     // For students, validate parent details if provided
     let parentUser = null
     let parentTempPassword = null // Declare in outer scope
-    if (role === 'student' && (parentName || parentEmail || parentMobile)) {
-      if (!parentName || !parentEmail || !parentMobile) {
+    
+    // Check if any parent fields have actual content (not just empty strings)
+    const hasParentName = parentName && parentName.trim()
+    const hasParentEmail = parentEmail && parentEmail.trim()
+    const hasParentMobile = parentMobile && parentMobile.trim()
+    
+    if (role === 'student' && (hasParentName || hasParentEmail || hasParentMobile)) {
+      console.log('Parent validation:', { hasParentName, hasParentEmail, hasParentMobile })
+      if (!hasParentName || !hasParentEmail || !hasParentMobile) {
         return res.status(400).json({ 
           error: 'When creating a student with parent details, parent name, email, and mobile are all required' 
         })
@@ -227,18 +234,18 @@ router.post('/users', async (req, res) => {
     // Generate temporary password and username for student
     const tempPassword = Math.random().toString(36).slice(-8) + '!'
     const hashedPassword = await bcrypt.hash(tempPassword, 12)
-    const username = email.split('@')[0].toLowerCase() + Math.random().toString(36).substr(2, 3)
+    const username = email.trim().split('@')[0].toLowerCase() + Math.random().toString(36).substr(2, 3)
 
     // Create student user
     const user = new User({
-      name,
-      email: email.toLowerCase(),
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
       username,
       passwordHash: hashedPassword,
       role,
       isActive: true,
       profile: {
-        phone: mobile
+        phone: mobile.trim()
       },
       createdAt: new Date()
     })
@@ -246,23 +253,23 @@ router.post('/users', async (req, res) => {
     await user.save()
 
     // If creating a student and parent details are provided, create parent account
-    if (role === 'student' && parentName && parentEmail && parentMobile) {
+    if (role === 'student' && hasParentName && hasParentEmail && hasParentMobile) {
       try {
         // Generate parent credentials
         parentTempPassword = Math.random().toString(36).slice(-8) + '!' // Use the outer scope variable
         const parentHashedPassword = await bcrypt.hash(parentTempPassword, 12)
-        const parentUsername = parentEmail.split('@')[0].toLowerCase() + Math.random().toString(36).substr(2, 3)
+        const parentUsername = parentEmail.trim().split('@')[0].toLowerCase() + Math.random().toString(36).substr(2, 3)
 
         // Create parent user
         parentUser = new User({
-          name: parentName,
-          email: parentEmail.toLowerCase(),
+          name: parentName.trim(),
+          email: parentEmail.trim().toLowerCase(),
           username: parentUsername,
           passwordHash: parentHashedPassword,
           role: 'parent',
           isActive: true,
           profile: {
-            phone: parentMobile
+            phone: parentMobile.trim()
           },
           createdAt: new Date()
         })
