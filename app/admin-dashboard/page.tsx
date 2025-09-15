@@ -175,14 +175,20 @@ export default function AdminDashboard() {
       })
     }
 
-    console.log('Sanitized user data being sent:', userData)
+    console.log('Sending user data:', userData)
 
     try {
+      const headers = getAuthHeaders()
+      console.log('Request headers:', headers)
+      console.log('Request body:', JSON.stringify(userData))
+      
       const response = await fetch('/api/admin-secure/users', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: headers,
         body: JSON.stringify(userData)
       })
+      
+      console.log('Response status:', response.status)
 
       const data = await response.json()
 

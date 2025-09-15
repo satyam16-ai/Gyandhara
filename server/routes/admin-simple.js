@@ -172,6 +172,14 @@ router.get('/users', async (req, res) => {
 // Create user
 router.post('/users', async (req, res) => {
   try {
+    console.log('=== USER CREATION REQUEST DEBUG ===')
+    console.log('Request method:', req.method)
+    console.log('Request URL:', req.url)
+    console.log('Request headers:', req.headers)
+    console.log('Raw request body:', req.body)
+    console.log('Body type:', typeof req.body)
+    console.log('Body constructor:', req.body?.constructor?.name)
+    
     const { name, email, mobile, role = 'student', parentName, parentEmail, parentMobile, relationship = 'guardian' } = req.body
 
     console.log('Received user creation request:', { name, email, mobile, role, parentName, parentEmail, parentMobile })
