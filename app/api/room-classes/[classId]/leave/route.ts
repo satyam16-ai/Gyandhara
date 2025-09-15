@@ -8,7 +8,8 @@ export async function POST(
     const { classId } = await params
     const body = await request.json()
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/room-classes/${classId}/leave`, {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gyandhara-backend.onrender.com'
+    const response = await fetch(`${backendUrl}/api/room-classes/${classId}/leave`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
