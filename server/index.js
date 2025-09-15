@@ -31,6 +31,8 @@ const server = http.createServer(app)
 const allowedOrigins = config.IS_PRODUCTION 
   ? [
       config.FRONTEND_URL,
+      'https://gyandhara-tau.vercel.app',
+      'https://gyandhara-satyam.vercel.app',
       'https://your-domain.com',
       'https://www.your-domain.com',
       'https://gyandhara-platform.herokuapp.com',
@@ -45,6 +47,7 @@ const allowedOrigins = config.IS_PRODUCTION
       'http://localhost:3002',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
+      'https://gyandhara-tau.vercel.app',
       'https://gyandhara-satyam.vercel.app',
       'https://gyandharasatyam.vercel.app'
     ]
