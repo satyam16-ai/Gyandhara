@@ -30,15 +30,21 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization')
     const body = await request.json()
     
+    console.log('Next.js API Proxy - Received POST request')
+    console.log('Auth header:', authHeader ? 'present' : 'missing')
+    console.log('Request body:', body)
+    
     const response = await fetchFromBackend('/api/admin-secure/users', {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         ...(authHeader && { 'Authorization': authHeader }),
       },
       body: JSON.stringify(body),
     })
     
     const data = await response.json()
+    console.log('Backend response status:', response.status)
     
     return NextResponse.json(data, { status: response.status })
   } catch (error) {

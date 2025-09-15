@@ -178,14 +178,19 @@ export default function AdminDashboard() {
     console.log('Sending user data:', userData)
 
     try {
-      const headers = getAuthHeaders()
+      const headers = {
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
       console.log('Request headers:', headers)
       console.log('Request body:', JSON.stringify(userData))
       
       const response = await fetch('/api/admin-secure/users', {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify(userData)
+        body: JSON.stringify(userData),
+        mode: 'cors'
       })
       
       console.log('Response status:', response.status)
