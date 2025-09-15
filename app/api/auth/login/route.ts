@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { fetchFromBackend } from '../../utils/backend'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    // Forward the request to the backend server
-    const backendUrl = 'http://localhost:8080/api/auth/login'
+    console.log('Auth login proxy - received request')
+    console.log('Request body:', body)
     
-    const response = await fetch(backendUrl, {
+    // Forward the request to the backend server using the utility
+    const response = await fetchFromBackend('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -16,6 +18,7 @@ export async function POST(request: NextRequest) {
     })
     
     const data = await response.json()
+    console.log('Backend login response status:', response.status)
     
     return NextResponse.json(data, { status: response.status })
   } catch (error) {

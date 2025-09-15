@@ -28,7 +28,8 @@ export default function WhiteboardSyncTest() {
   const connectTeacher = () => {
     log('teacher', '🎓 Connecting as teacher...')
     
-    const socket = io('http://localhost:8080')
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gyandhara-backend.onrender.com'
+    const socket = io(backendUrl)
     setTeacherSocket(socket)
     
     socket.on('connect', () => {
@@ -59,7 +60,8 @@ export default function WhiteboardSyncTest() {
   const connectStudent = () => {
     log('student', '👨‍🎓 Connecting as student...')
     
-    const socket = io('http://localhost:8080')
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gyandhara-backend.onrender.com'
+    const socket = io(backendUrl)
     setStudentSocket(socket)
     
     socket.on('connect', () => {

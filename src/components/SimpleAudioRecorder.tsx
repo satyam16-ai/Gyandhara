@@ -25,7 +25,8 @@ export default function SimpleAudioRecorder({ isTeacher, userId, userName, roomI
 
   // Socket.io connection
   useEffect(() => {
-    const socketConnection = io('http://localhost:8080')
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gyandhara-backend.onrender.com'
+    const socketConnection = io(backendUrl)
     setSocket(socketConnection)
 
     console.log('🔌 Socket.io connecting...')

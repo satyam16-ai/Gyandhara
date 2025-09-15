@@ -251,7 +251,8 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
       })
 
       // First, properly join the class to register as a participant for whiteboard access
-      const joinResponse = await fetch(`http://localhost:8080/api/room-classes/${lecture._id}/join`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gyandhara-backend.onrender.com'
+      const joinResponse = await fetch(`${backendUrl}/api/room-classes/${lecture._id}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

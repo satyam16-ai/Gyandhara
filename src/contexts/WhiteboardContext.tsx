@@ -125,10 +125,11 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
       socketRef.current.disconnect()
     }
 
-    console.log('🌐 Creating new socket connection to: http://localhost:8080');
-    console.log('⚠️ DEBUG: Server might be running on different port - check server logs!');
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gyandhara-backend.onrender.com'
+    console.log('🌐 Creating new socket connection to:', backendUrl);
+    console.log('⚠️ DEBUG: Using production backend URL for Socket.io connection!');
     // Create new socket connection
-    const newSocket = io('http://localhost:8080', {
+    const newSocket = io(backendUrl, {
       transports: ['websocket', 'polling'],
       timeout: 20000,
       forceNew: true

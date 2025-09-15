@@ -13,7 +13,7 @@ module.exports = {
   // Server Configuration
   PORT: process.env.PORT || 8080,
   NODE_ENV: process.env.NODE_ENV || 'development',
-  FRONTEND_URL: process.env.FRONTEND_URL || (isProduction ? 'https://your-domain.com' : 'http://localhost:3000'),
+  FRONTEND_URL: process.env.FRONTEND_URL || (isProduction ? 'https://gyandhara-satyam.vercel.app' : 'http://localhost:3000'),
   
   // JWT Configuration
   JWT_SECRET: process.env.JWT_SECRET || (isProduction 
