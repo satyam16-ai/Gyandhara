@@ -175,6 +175,13 @@ router.post('/users', async (req, res) => {
     const { name, email, mobile, role = 'student', parentName, parentEmail, parentMobile, relationship = 'guardian' } = req.body
 
     console.log('Received user creation request:', { name, email, mobile, role, parentName, parentEmail, parentMobile })
+    // Debug: Print raw and trimmed values
+    console.log('Raw values:', { name, email, mobile })
+    console.log('Trimmed values:', {
+      name: name ? name.trim() : '',
+      email: email ? email.trim() : '',
+      mobile: mobile ? mobile.trim() : ''
+    })
 
     // Validate required fields (check for empty strings and whitespace)
     if (!name || !name.trim() || !email || !email.trim() || !mobile || !mobile.trim()) {
