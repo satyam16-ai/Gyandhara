@@ -251,16 +251,13 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
       })
 
       // First, properly join the class to register as a participant for whiteboard access
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gyandhara-backend.onrender.com'
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:10000'
       const joinResponse = await fetch(`${backendUrl}/api/room-classes/${lecture._id}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${userToken}`
-        },
-        body: JSON.stringify({
-          userId: userId
-        })
+        }
       })
 
       console.log('📡 Join API Response status:', joinResponse.status)
@@ -407,6 +404,15 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
                 <School className="w-4 h-4 inline mr-1 sm:mr-2" />
                 <span className="text-sm sm:text-base">My Classrooms</span>
               </button>
+             <button
+  onClick={() => window.location.href = "https://deployed-version.vercel.app/doubt"}
+  className={`flex-shrink-0 px-3 py-2 sm:px-4 rounded-lg font-medium transition-all duration-200 
+    text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50`}
+>
+  <School className="w-4 h-4 inline mr-1 sm:mr-2" />
+  <span className="text-sm sm:text-base">AI Doubt-Solver</span>
+</button>
+
             </div>
             
             {/* Bottom Row - Action Buttons */}

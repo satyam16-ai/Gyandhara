@@ -320,10 +320,10 @@ export default function TeacherLoginPage() {
               }}
               className="text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium px-2"
             >
-              {isRegister 
+              {/* {isRegister 
                 ? 'Already have a teacher account? Sign in' 
                 : "Don't have a teacher account? Register"
-              }
+              } */}
             </button>
           </div>
 

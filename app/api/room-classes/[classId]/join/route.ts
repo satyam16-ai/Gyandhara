@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const BACKEND_URL = process.env.BACKEND_URL || 'https://gyandhara-backend.onrender.com'
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080'
 
 // POST /api/room-classes/[classId]/join - Student joins a class
 export async function POST(
@@ -9,12 +9,26 @@ export async function POST(
 ) {
   try {
     const { classId } = await params
-    const body = await request.json()
+    
+    // Handle empty request body gracefully
+    let body = {}
+    try {
+      const text = await request.text()
+      if (text.trim()) {
+        body = JSON.parse(text)
+      }
+    } catch (jsonError) {
+      console.log('No JSON body provided, using empty object')
+    }
+    
+    // Forward the Authorization header from the client
+    const authHeader = request.headers.get('authorization')
 
     const response = await fetch(`${BACKEND_URL}/api/room-classes/${classId}/join`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader && { 'Authorization': authHeader })
       },
       body: JSON.stringify(body),
     })

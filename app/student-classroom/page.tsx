@@ -58,11 +58,7 @@ export default function StudentClassroomPage() {
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                userId: userId,
-                userName: userName
-              })
+              }
             })
 
             if (response.ok) {
@@ -90,20 +86,24 @@ export default function StudentClassroomPage() {
       const classId = localStorage.getItem('currentClassId')
       
       if (userId && classId) {
-        // Call the leave API to track attendance
-        const leaveResponse = await fetch(`/api/room-classes/${classId}/leave`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ userId }),
-        })
+        const token = localStorage.getItem('userToken')
+        
+        if (token) {
+          // Call the leave API to track attendance
+          const leaveResponse = await fetch(`/api/room-classes/${classId}/leave`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          })
 
         if (leaveResponse.ok) {
           const result = await leaveResponse.json()
           console.log('Class left successfully, attendance:', result.attendancePercentage + '%')
         } else {
           console.error('Failed to record class leave')
+        }
         }
       }
     } catch (error) {

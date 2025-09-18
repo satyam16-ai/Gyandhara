@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const BACKEND_URL = process.env.BACKEND_URL || 'https://gyandhara-backend.onrender.com'
+import { fetchFromBackend } from '../../utils/backend'
 
 // GET /api/room-classes/[classId] - Get a specific class
 export async function GET(
@@ -10,8 +9,12 @@ export async function GET(
   try {
     const { classId } = await params
 
-    const response = await fetch(`${BACKEND_URL}/api/room-classes/${classId}`, {
+    const authHeader = request.headers.get('authorization')
+    const response = await fetchFromBackend(`/api/room-classes/${classId}`, {
       method: 'GET',
+      headers: {
+        ...(authHeader && { Authorization: authHeader })
+      }
     })
 
     const data = await response.json()
@@ -34,10 +37,12 @@ export async function PUT(
     const { classId } = await params
     const body = await request.json()
 
-    const response = await fetch(`${BACKEND_URL}/api/room-classes/${classId}`, {
+    const authHeader = request.headers.get('authorization')
+    const response = await fetchFromBackend(`/api/room-classes/${classId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader && { Authorization: authHeader })
       },
       body: JSON.stringify(body),
     })
@@ -61,10 +66,12 @@ export async function DELETE(
   try {
     const { classId } = await params
 
-    const response = await fetch(`${BACKEND_URL}/api/room-classes/${classId}`, {
+    const authHeader = request.headers.get('authorization')
+    const response = await fetchFromBackend(`/api/room-classes/${classId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader && { Authorization: authHeader })
       },
     })
 

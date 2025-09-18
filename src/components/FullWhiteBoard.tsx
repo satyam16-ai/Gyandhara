@@ -28,6 +28,7 @@ import {
   Download,
   Upload,
   Maximize,
+  ChevronDown,
   User,
   LogOut,
   X,
@@ -53,12 +54,16 @@ import {
   BarChart3,
   Activity,
   Zap,
-  Gauge
+  Gauge,
+  RectangleHorizontal,
+  Hexagon,
+  Star
 } from 'lucide-react'
 
 interface DrawingElement {
   id: string
-  type: 'freehand' | 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | 'highlight' | 'triangle' | 'image'
+  type: 'freehand' | 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | 'highlight' | 'triangle' | 'image' | 
+        'filled-rectangle' | 'filled-circle' | 'filled-triangle' | 'diamond' | 'filled-diamond' | 'ellipse' | 'filled-ellipse'
   points: number[]
   options: {
     stroke: string
@@ -89,13 +94,48 @@ interface WhiteBoardProps {
   userName?: string
 }
 
-type Tool = 'select' | 'pen' | 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | 'highlighter' | 'eraser' | 'triangle' | 'hand' | 'image'
+type Tool = 'select' | 'pen' | 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | 'highlighter' | 'eraser' | 'triangle' | 'hand' | 'image' | 'filled-rectangle' | 'filled-circle' | 'filled-triangle' | 'diamond' | 'filled-diamond' | 'ellipse' | 'filled-ellipse'
 
 const colors = [
   '#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', 
   '#FF00FF', '#00FFFF', '#FFA500', '#800080', '#008000',
   '#800000', '#000080', '#808080', '#C0C0C0', '#FFFFFF'
 ]
+
+// Shape tool groups for dropdown
+const shapeGroups = [
+  {
+    name: 'Basic Shapes',
+    tools: [
+      { tool: 'rectangle' as Tool, name: 'Rectangle', icon: Square },
+      { tool: 'circle' as Tool, name: 'Circle', icon: Circle },
+      { tool: 'triangle' as Tool, name: 'Triangle', icon: Triangle },
+      { tool: 'line' as Tool, name: 'Line', icon: Minus },
+      { tool: 'arrow' as Tool, name: 'Arrow', icon: ArrowRight },
+    ]
+  },
+  {
+    name: 'Filled Shapes',
+    tools: [
+      { tool: 'filled-rectangle' as Tool, name: 'Filled Rectangle', icon: null },
+      { tool: 'filled-circle' as Tool, name: 'Filled Circle', icon: null },
+      { tool: 'filled-triangle' as Tool, name: 'Filled Triangle', icon: null },
+      { tool: 'diamond' as Tool, name: 'Diamond', icon: null },
+      { tool: 'filled-diamond' as Tool, name: 'Filled Diamond', icon: null },
+      { tool: 'ellipse' as Tool, name: 'Ellipse', icon: null },
+      { tool: 'filled-ellipse' as Tool, name: 'Filled Ellipse', icon: null },
+    ]
+  }
+]
+
+// Helper function to get current shape tool info
+const getCurrentShapeInfo = (tool: Tool) => {
+  for (const group of shapeGroups) {
+    const found = group.tools.find(t => t.tool === tool)
+    if (found) return found
+  }
+  return { tool, name: 'Shapes', icon: Square }
+}
 
 const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
   isTeacher,
@@ -145,9 +185,14 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
   const isDrawingRef = useRef(false)
   const currentPathRef = useRef<number[]>([])
   const currentElementIdRef = useRef<string>('')
+  const elementsRef = useRef<DrawingElement[]>([])
+  const currentDrawingElementRef = useRef<DrawingElement | null>(null)
+  const teacherCursorRef = useRef<any>(null)
   
   // UI State
   const [tool, setTool] = useState<Tool>('pen')
+  const [showShapeDropdown, setShowShapeDropdown] = useState(false)
+  const [showToolbar, setShowToolbar] = useState(true)
   const [strokeColor, setStrokeColor] = useState('#000000')
   const [fillColor, setFillColor] = useState('transparent')
   const [strokeWidth, setStrokeWidth] = useState(2)
@@ -171,6 +216,11 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
   const [initialImageState, setInitialImageState] = useState<{x: number, y: number, width: number, height: number} | null>(null)
   const [cursorType, setCursorType] = useState<string>('default')
   
+  // Selected drawing element for move tool
+  const [selectedElement, setSelectedElement] = useState<DrawingElement | null>(null)
+  const [isDraggingElement, setIsDraggingElement] = useState(false)
+  const [elementDragOffset, setElementDragOffset] = useState<{x: number, y: number}>({x: 0, y: 0})
+  
   // Grid settings
   const [showGrid, setShowGrid] = useState<boolean>(true)
   const [gridSize, setGridSize] = useState<number>(20)
@@ -192,6 +242,18 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
   const [showParticipants, setShowParticipants] = useState(false)
   const [handRaised, setHandRaised] = useState(false)
   const [showChatModal, setShowChatModal] = useState(false)
+  
+  // Chat messages state - persists when modal is closed/opened
+  const [chatMessages, setChatMessages] = useState<Array<{
+    id: string
+    userId: string
+    userName: string
+    message: string
+    timestamp: number
+    type: 'text' | 'system' | 'notification'
+    isTeacher: boolean
+    replyTo?: string
+  }>>([])
   
   // AI Doubt Solver state
   const [isAIDoubtVisible, setIsAIDoubtVisible] = useState(false)
@@ -365,6 +427,27 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
           dpr: dpr
         })
       }
+
+      // If student, try to keep the teacher canvas fully visible on resize by fitting current drawing bounds
+      if (socket && !isTeacher) {
+        // Fit to container while maintaining aspect ratio based on current slide/drawing bounds
+        try {
+          const contentWidth = rect.width
+          const contentHeight = rect.height
+          if (contentWidth > 0 && contentHeight > 0) {
+            // Compute a safe zoom that keeps everything within viewport
+            // Prefer slight padding so edges are not clipped
+            const padding = 16
+            const availW = Math.max(1, rect.width - padding * 2)
+            const availH = Math.max(1, rect.height - padding * 2)
+            // Base design space is the canvas CSS size itself
+            const fitZoom = 1 // since drawing coordinates are in CSS pixels already
+            // Center the view
+            setPanOffset({ x: padding, y: padding })
+            setZoom(fitZoom)
+          }
+        } catch {}
+      }
     }
 
     resizeCanvas()
@@ -450,10 +533,68 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
     }
   }, [drawingElements, currentSlideIndex])
 
-  // Redraw canvas
+  // Update refs when state changes
+  const lastElementsLengthRef = useRef(0)
+  const isRedrawScheduledRef = useRef(false)
+  
+  useEffect(() => {
+    elementsRef.current = drawingElements
+    
+    // Only redraw if we have new elements added, not for modifications
+    if (drawingElements.length !== lastElementsLengthRef.current) {
+      lastElementsLengthRef.current = drawingElements.length
+      
+      // Schedule redraw only if not already scheduled
+      if (!isRedrawScheduledRef.current) {
+        isRedrawScheduledRef.current = true
+        requestAnimationFrame(() => {
+          redrawCanvas()
+          isRedrawScheduledRef.current = false
+        })
+      }
+    }
+  }, [drawingElements])
+
+  useEffect(() => {
+    currentDrawingElementRef.current = currentDrawingElement
+    // Only redraw for current drawing element during active drawing
+    if (currentDrawingElement && isDrawingRef.current) {
+      if (!isRedrawScheduledRef.current) {
+        isRedrawScheduledRef.current = true
+        requestAnimationFrame(() => {
+          redrawCanvas()
+          isRedrawScheduledRef.current = false
+        })
+      }
+    }
+  }, [currentDrawingElement])
+
+  useEffect(() => {
+    teacherCursorRef.current = teacherCursor
+    // Cursor updates don't need full canvas redraw
+  }, [teacherCursor])
+
+  // Redraw only for transform changes (zoom, pan) - immediate
   useEffect(() => {
     redrawCanvas()
-  }, [drawingElements, currentDrawingElement, zoom, panOffset])
+  }, [zoom, panOffset])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showShapeDropdown) {
+        const target = event.target as HTMLElement
+        if (!target.closest('.relative')) {
+          setShowShapeDropdown(false)
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showShapeDropdown])
 
   // Keyboard event handlers
   useEffect(() => {
@@ -465,11 +606,9 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
           setSelectedImage(null)
           
           // Send deletion to other users
-          if (socket) {
-            socket.emit('drawing', {
-              action: 'delete',
-              elementId: selectedImage.id
-            })
+          if (isConnected) {
+            sendCompressedDrawing({ action: 'erase', elementId: selectedImage.id, timestamp: Date.now() })
+            sendDrawingUpdate('erase', undefined, selectedImage.id)
           }
         }
       }
@@ -519,32 +658,71 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
     const handleCanvasDimensionsChanged = (dimensionData: any) => {
       if (dimensionData.sessionId === roomId && !isTeacher) {
         console.log('📐 Student received canvas dimension update:', dimensionData)
-        // Force canvas resize to match teacher dimensions
+        // Fit teacher canvas into student's viewport by adjusting zoom and pan.
         const canvas = canvasRef.current
-        if (canvas && canvas.parentElement) {
-          const container = canvas.parentElement
-          const currentRect = container.getBoundingClientRect()
-          
-          // If dimensions are significantly different, log for debugging
-          if (Math.abs(currentRect.width - dimensionData.width) > 10 || 
-              Math.abs(currentRect.height - dimensionData.height) > 10) {
-            console.log('📐 Canvas size mismatch detected:', {
-              student: { width: currentRect.width, height: currentRect.height },
-              teacher: { width: dimensionData.width, height: dimensionData.height }
-            })
-          }
-        }
+        if (!canvas) return
+        const container = canvas.parentElement
+        if (!container) return
+        const rect = container.getBoundingClientRect()
+
+        const teacherW = Math.max(1, dimensionData.width || 1)
+        const teacherH = Math.max(1, dimensionData.height || 1)
+        const availW = Math.max(1, rect.width - 16) // padding
+        const availH = Math.max(1, rect.height - 16)
+
+        const scaleX = availW / teacherW
+        const scaleY = availH / teacherH
+        const fitZoom = Math.min(scaleX, scaleY)
+
+        // Clamp zoom to reasonable bounds
+        const clampedZoom = Math.max(0.2, Math.min(fitZoom, 3))
+        setZoom(clampedZoom)
+
+        // Center content
+        const offsetX = (rect.width - teacherW * clampedZoom) / 2
+        const offsetY = (rect.height - teacherH * clampedZoom) / 2
+        setPanOffset({ x: Math.max(0, offsetX), y: Math.max(0, offsetY) })
+        
+        // Redraw after adjusting view
+        redrawCanvas()
       }
     }
 
     socket.on('paperStyleChanged', handlePaperStyleChanged)
     socket.on('canvasDimensionsChanged', handleCanvasDimensionsChanged)
     
+    // Teacher broadcasts initial paper settings when joining or settings change
+    if (isTeacher) {
+      const broadcastCurrentSettings = () => {
+        socket.emit('paperStyleChanged', {
+          sessionId: roomId,
+          paperType,
+          paperTexture,
+          showGrid,
+          gridType,
+          gridSize,
+          snapToGrid
+        })
+      }
+      
+      // Broadcast current settings periodically for new students joining
+      const settingsBroadcast = setInterval(broadcastCurrentSettings, 3000)
+      
+      // Also broadcast immediately
+      setTimeout(broadcastCurrentSettings, 500)
+      
+      return () => {
+        socket.off('paperStyleChanged', handlePaperStyleChanged)
+        socket.off('canvasDimensionsChanged', handleCanvasDimensionsChanged)
+        clearInterval(settingsBroadcast)
+      }
+    }
+    
     return () => {
       socket.off('paperStyleChanged', handlePaperStyleChanged)
       socket.off('canvasDimensionsChanged', handleCanvasDimensionsChanged)
     }
-  }, [socket, isTeacher, roomId])
+  }, [socket, isTeacher, roomId, paperType, paperTexture, showGrid, gridType, gridSize, snapToGrid])
 
   // Grid pattern generator (legacy - now using paper background)
   const getGridBackground = () => {
@@ -613,6 +791,43 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
     return paperTexture ? `${gridPattern}, ${getPaperTexture()}` : gridPattern
   }
 
+  // === Unified aspect ratio handling ===
+  // Default aspect ratio 16:9; teacher broadcasts any change in live dimensions as ratio
+  const [boardAspect, setBoardAspect] = useState<number>(16 / 9)
+
+  // When teacher resizes, compute aspect and broadcast it
+  useEffect(() => {
+    if (!isTeacher || !socket) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const container = canvas.parentElement
+    if (!container) return
+    const onResize = () => {
+      const rect = container.getBoundingClientRect()
+      const w = Math.max(1, rect.width)
+      const h = Math.max(1, rect.height)
+      const ratio = w / h
+      setBoardAspect(ratio)
+      socket.emit('canvasAspectChanged', { sessionId: roomId, ratio })
+    }
+    window.addEventListener('resize', onResize)
+    // fire once initially
+    onResize()
+    return () => window.removeEventListener('resize', onResize)
+  }, [socket, isTeacher, roomId])
+
+  // Student listens for ratio and uses it to size the board area
+  useEffect(() => {
+    if (isTeacher || !socket) return
+    const handler = (data: any) => {
+      if (data?.sessionId === roomId && typeof data?.ratio === 'number' && isFinite(data.ratio) && data.ratio > 0) {
+        setBoardAspect(data.ratio)
+      }
+    }
+    socket.on('canvasAspectChanged', handler)
+    return () => { socket.off('canvasAspectChanged', handler) }
+  }, [socket, isTeacher, roomId])
+
   // Image handling functions
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -653,11 +868,9 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
 
       setDrawingElements(prev => [...prev, imageElement])
       
-      // Send to other users
-      if (socket) {
-        socket.emit('drawing', {
-          element: imageElement
-        })
+      // Send to other users using standard element add event
+      if (isConnected) {
+        sendDrawingElement(imageElement)
       }
 
       // Reset tool to select after adding image
@@ -703,9 +916,10 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
     )
     setSelectedImage(updatedImage)
 
-    // Send update to other users
-    if (socket) {
-      socket.emit('drawing', {
+    // Send update to other users (real-time move)
+    if (socket && isTeacher) {
+      socket.emit('element-move', {
+        elementId: updatedImage.id,
         element: updatedImage
       })
     }
@@ -725,42 +939,72 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
 
     const rect = canvas.getBoundingClientRect()
     
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    // Canvas now uses transparent background to show CSS grid
-    // ctx.fillStyle = '#ffffff'
-    // ctx.fillRect(0, 0, canvas.width, canvas.height)
+    // Use requestAnimationFrame for smooth rendering
+    requestAnimationFrame(() => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      
+      ctx.save()
+      ctx.scale(zoom, zoom)
+      ctx.translate(panOffset.x, panOffset.y)
 
-    ctx.save()
-    ctx.scale(zoom, zoom)
-    ctx.translate(panOffset.x, panOffset.y)
+      // Draw elements - use refs to avoid re-render dependencies
+      const elementsToRender = elementsRef.current || []
+      
+      elementsToRender
+        .filter(element => element && element.type && element.options) // Filter out invalid elements
+        .forEach(element => {
+        try {
+          drawElement(ctx, roughCanvas, element)
+        } catch (error) {
+          console.error('Error drawing element:', error, element)
+        }
+      })
 
-    // Canvas now has CSS grid background, no need to draw grid
-
-    // Draw elements
-    drawingElements
-      .filter(element => element && element.type && element.options) // Filter out invalid elements
-      .forEach(element => {
-      try {
-        drawElement(ctx, roughCanvas, element)
-      } catch (error) {
-        console.error('Error drawing element:', error, element)
+      const currentElement = currentDrawingElementRef.current
+      if (currentElement && currentElement.type && currentElement.options) {
+        try {
+          drawElement(ctx, roughCanvas, currentElement, true)
+        } catch (error) {
+          console.error('Error drawing current element:', error)
+        }
       }
-    })
 
-    if (currentDrawingElement && currentDrawingElement.type && currentDrawingElement.options) {
-      try {
-        drawElement(ctx, roughCanvas, currentDrawingElement, true)
-      } catch (error) {
-        console.error('Error drawing current element:', error)
+      const teacherCursorData = teacherCursorRef.current
+      if (!isTeacher && teacherCursorData) {
+        drawTeacherCursor(ctx, teacherCursorData)
       }
-    }
 
-    if (!isTeacher && teacherCursor) {
-      drawTeacherCursor(ctx, teacherCursor)
-    }
+      // Draw selection outline for selected element
+      if (selectedElement && tool === 'select') {
+        ctx.strokeStyle = '#3b82f6' // Blue selection outline
+        ctx.lineWidth = 2
+        ctx.setLineDash([5, 5]) // Dashed line
+        
+        if (selectedElement.x !== undefined && selectedElement.y !== undefined) {
+          // For elements with x,y position
+          ctx.strokeRect(
+            selectedElement.x - 5, 
+            selectedElement.y - 5, 
+            (selectedElement.width || 50) + 10, 
+            (selectedElement.height || 50) + 10
+          )
+        } else if (selectedElement.points.length >= 4) {
+          // For elements with points - draw bounding box
+          const xs = selectedElement.points.filter((_, i) => i % 2 === 0)
+          const ys = selectedElement.points.filter((_, i) => i % 2 === 1)
+          const minX = Math.min(...xs) - 5
+          const maxX = Math.max(...xs) + 5
+          const minY = Math.min(...ys) - 5
+          const maxY = Math.max(...ys) + 5
+          ctx.strokeRect(minX, minY, maxX - minX, maxY - minY)
+        }
+        
+        ctx.setLineDash([]) // Reset to solid line
+      }
 
-    ctx.restore()
-  }, [drawingElements, currentDrawingElement, teacherCursor, zoom, panOffset, isTeacher])
+      ctx.restore()
+    }) // Close requestAnimationFrame callback
+  }, [zoom, panOffset, isTeacher]) // Minimal dependencies - only essential transforms
 
   const drawGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     const gridSize = 20 * zoom
@@ -817,11 +1061,32 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
       case 'rectangle':
         drawRectangle(roughCanvas, element)
         break
+      case 'filled-rectangle':
+        drawFilledRectangle(ctx, element)
+        break
       case 'circle':
         drawCircle(roughCanvas, element)
         break
+      case 'filled-circle':
+        drawFilledCircle(ctx, element)
+        break
       case 'triangle':
         drawTriangle(roughCanvas, element)
+        break
+      case 'filled-triangle':
+        drawFilledTriangle(ctx, element)
+        break
+      case 'diamond':
+        drawDiamond(roughCanvas, element)
+        break
+      case 'filled-diamond':
+        drawFilledDiamond(ctx, element)
+        break
+      case 'ellipse':
+        drawEllipse(roughCanvas, element)
+        break
+      case 'filled-ellipse':
+        drawFilledEllipse(ctx, element)
         break
       case 'line':
         drawLine(roughCanvas, element)
@@ -888,11 +1153,22 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
       console.warn('Invalid rectangle element:', element)
       return
     }
-    try {
-      roughCanvas.rectangle(element.x, element.y, element.width, element.height, element.options)
-    } catch (error) {
-      console.error('Error drawing rectangle:', error)
+    
+    // Use native Canvas API for perfect rectangles
+    const canvas = roughCanvas.canvas
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    ctx.save()
+    // Fill if provided
+    if (element.options.fill && element.options.fill !== 'transparent') {
+      ctx.fillStyle = element.options.fill
+      ctx.fillRect(element.x, element.y, element.width, element.height)
     }
+    ctx.strokeStyle = element.options.stroke || '#000000'
+    ctx.lineWidth = element.options.strokeWidth || 2
+    ctx.strokeRect(element.x, element.y, element.width, element.height)
+    ctx.restore()
   }
 
   const drawCircle = (roughCanvas: any, element: DrawingElement) => {
@@ -901,14 +1177,28 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
       console.warn('Invalid circle element:', element)
       return
     }
-    try {
-      const centerX = element.x + element.width / 2
-      const centerY = element.y + element.height / 2
-      const radius = Math.min(Math.abs(element.width), Math.abs(element.height)) / 2
-      roughCanvas.circle(centerX, centerY, radius * 2, element.options)
-    } catch (error) {
-      console.error('Error drawing circle:', error)
+    
+    // Use native Canvas API for perfect circles
+    const canvas = roughCanvas.canvas
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+  ctx.save()
+  ctx.strokeStyle = element.options.stroke || '#000000'
+  ctx.lineWidth = element.options.strokeWidth || 2
+    
+    const centerX = element.x + element.width / 2
+    const centerY = element.y + element.height / 2
+    const radius = Math.min(Math.abs(element.width), Math.abs(element.height)) / 2
+    
+    ctx.beginPath()
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
+    if (element.options.fill && element.options.fill !== 'transparent') {
+      ctx.fillStyle = element.options.fill
+      ctx.fill()
     }
+    ctx.stroke()
+    ctx.restore()
   }
 
   const drawTriangle = (roughCanvas: any, element: DrawingElement) => {
@@ -917,18 +1207,34 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
       console.warn('Invalid triangle element:', element)
       return
     }
-    try {
-      const x1 = element.x + element.width / 2
-      const y1 = element.y
-      const x2 = element.x
-      const y2 = element.y + element.height
-      const x3 = element.x + element.width
-      const y3 = element.y + element.height
-      
-      roughCanvas.polygon([[x1, y1], [x2, y2], [x3, y3]], element.options)
-    } catch (error) {
-      console.error('Error drawing triangle:', error)
+    
+    // Use native Canvas API for perfect triangles
+    const canvas = roughCanvas.canvas
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+  ctx.save()
+  ctx.strokeStyle = element.options.stroke || '#000000'
+  ctx.lineWidth = element.options.strokeWidth || 2
+    
+    const x1 = element.x + element.width / 2  // top point
+    const y1 = element.y
+    const x2 = element.x                      // bottom left
+    const y2 = element.y + element.height
+    const x3 = element.x + element.width      // bottom right
+    const y3 = element.y + element.height
+    
+    ctx.beginPath()
+    ctx.moveTo(x1, y1)
+    ctx.lineTo(x2, y2)
+    ctx.lineTo(x3, y3)
+    ctx.closePath()
+    if (element.options.fill && element.options.fill !== 'transparent') {
+      ctx.fillStyle = element.options.fill
+      ctx.fill()
     }
+    ctx.stroke()
+    ctx.restore()
   }
 
   const drawLine = (roughCanvas: any, element: DrawingElement) => {
@@ -1083,6 +1389,173 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
     img.src = element.imageData
   }
 
+  // New perfect shape drawing functions using native Canvas API
+  const drawFilledRectangle = (ctx: CanvasRenderingContext2D, element: DrawingElement) => {
+    if (!element || !element.options || element.x === undefined || element.y === undefined || 
+        element.width === undefined || element.height === undefined) {
+      console.warn('Invalid filled rectangle element:', element)
+      return
+    }
+    
+    ctx.save()
+    ctx.fillStyle = element.options.stroke || '#000000'
+    ctx.fillRect(element.x, element.y, element.width, element.height)
+    ctx.restore()
+  }
+
+  const drawFilledCircle = (ctx: CanvasRenderingContext2D, element: DrawingElement) => {
+    if (!element || !element.options || element.x === undefined || element.y === undefined || 
+        element.width === undefined || element.height === undefined) {
+      console.warn('Invalid filled circle element:', element)
+      return
+    }
+    
+    ctx.save()
+    ctx.fillStyle = element.options.stroke || '#000000'
+    const centerX = element.x + element.width / 2
+    const centerY = element.y + element.height / 2
+    const radius = Math.min(Math.abs(element.width), Math.abs(element.height)) / 2
+    
+    ctx.beginPath()
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+  }
+
+  const drawFilledTriangle = (ctx: CanvasRenderingContext2D, element: DrawingElement) => {
+    if (!element || !element.options || element.x === undefined || element.y === undefined || 
+        element.width === undefined || element.height === undefined) {
+      console.warn('Invalid filled triangle element:', element)
+      return
+    }
+    
+    ctx.save()
+    ctx.fillStyle = element.options.stroke || '#000000'
+    
+    const x1 = element.x + element.width / 2  // top point
+    const y1 = element.y
+    const x2 = element.x                      // bottom left
+    const y2 = element.y + element.height
+    const x3 = element.x + element.width      // bottom right
+    const y3 = element.y + element.height
+    
+    ctx.beginPath()
+    ctx.moveTo(x1, y1)
+    ctx.lineTo(x2, y2)
+    ctx.lineTo(x3, y3)
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
+  }
+
+  const drawDiamond = (roughCanvas: any, element: DrawingElement) => {
+    if (!element || !element.options || element.x === undefined || element.y === undefined || 
+        element.width === undefined || element.height === undefined) {
+      console.warn('Invalid diamond element:', element)
+      return
+    }
+    
+    // Use native Canvas API for perfect diamonds
+    const canvas = roughCanvas.canvas
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+  ctx.save()
+  ctx.strokeStyle = element.options.stroke || '#000000'
+  ctx.lineWidth = element.options.strokeWidth || 2
+    
+    const centerX = element.x + element.width / 2
+    const centerY = element.y + element.height / 2
+    
+    ctx.beginPath()
+    ctx.moveTo(centerX, element.y)                    // top
+    ctx.lineTo(element.x + element.width, centerY)    // right
+    ctx.lineTo(centerX, element.y + element.height)   // bottom
+    ctx.lineTo(element.x, centerY)                    // left
+    ctx.closePath()
+    if (element.options.fill && element.options.fill !== 'transparent') {
+      ctx.fillStyle = element.options.fill
+      ctx.fill()
+    }
+    ctx.stroke()
+    ctx.restore()
+  }
+
+  const drawFilledDiamond = (ctx: CanvasRenderingContext2D, element: DrawingElement) => {
+    if (!element || !element.options || element.x === undefined || element.y === undefined || 
+        element.width === undefined || element.height === undefined) {
+      console.warn('Invalid filled diamond element:', element)
+      return
+    }
+    
+    ctx.save()
+    ctx.fillStyle = element.options.stroke || '#000000'
+    
+    const centerX = element.x + element.width / 2
+    const centerY = element.y + element.height / 2
+    
+    ctx.beginPath()
+    ctx.moveTo(centerX, element.y)                    // top
+    ctx.lineTo(element.x + element.width, centerY)    // right
+    ctx.lineTo(centerX, element.y + element.height)   // bottom
+    ctx.lineTo(element.x, centerY)                    // left
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
+  }
+
+  const drawEllipse = (roughCanvas: any, element: DrawingElement) => {
+    if (!element || !element.options || element.x === undefined || element.y === undefined || 
+        element.width === undefined || element.height === undefined) {
+      console.warn('Invalid ellipse element:', element)
+      return
+    }
+    
+    // Use native Canvas API for perfect ellipses
+    const canvas = roughCanvas.canvas
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+  ctx.save()
+  ctx.strokeStyle = element.options.stroke || '#000000'
+  ctx.lineWidth = element.options.strokeWidth || 2
+    
+    const centerX = element.x + element.width / 2
+    const centerY = element.y + element.height / 2
+    const radiusX = Math.abs(element.width) / 2
+    const radiusY = Math.abs(element.height) / 2
+    
+    ctx.beginPath()
+    ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2)
+    if (element.options.fill && element.options.fill !== 'transparent') {
+      ctx.fillStyle = element.options.fill
+      ctx.fill()
+    }
+    ctx.stroke()
+    ctx.restore()
+  }
+
+  const drawFilledEllipse = (ctx: CanvasRenderingContext2D, element: DrawingElement) => {
+    if (!element || !element.options || element.x === undefined || element.y === undefined || 
+        element.width === undefined || element.height === undefined) {
+      console.warn('Invalid filled ellipse element:', element)
+      return
+    }
+    
+    ctx.save()
+    ctx.fillStyle = element.options.stroke || '#000000'
+    
+    const centerX = element.x + element.width / 2
+    const centerY = element.y + element.height / 2
+    const radiusX = Math.abs(element.width) / 2
+    const radiusY = Math.abs(element.height) / 2
+    
+    ctx.beginPath()
+    ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+  }
+
   // Mouse/pointer event handlers
   const getMousePos = (e: React.MouseEvent | React.TouchEvent | React.PointerEvent) => {
     const canvas = canvasRef.current
@@ -1176,6 +1649,30 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
       } else {
         setSelectedImage(null)
       }
+      
+      // Check if clicking on a drawing element (shapes, lines, etc.)
+      const clickedElement = findElementAtPosition(x, y)
+      if (clickedElement && clickedElement.type !== 'image') {
+        setSelectedElement(clickedElement)
+        setIsDraggingElement(true)
+        
+        // Calculate offset for dragging
+        if (clickedElement.x !== undefined && clickedElement.y !== undefined) {
+          setElementDragOffset({
+            x: x - clickedElement.x,
+            y: y - clickedElement.y
+          })
+        } else if (clickedElement.points.length >= 2) {
+          // For freehand/line elements, use first point as reference
+          setElementDragOffset({
+            x: x - clickedElement.points[0],
+            y: y - clickedElement.points[1]
+          })
+        }
+        return
+      } else {
+        setSelectedElement(null)
+      }
     }
     
     if (tool === 'pen' || tool === 'highlighter') {
@@ -1263,9 +1760,10 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
       )
       setSelectedImage(updatedImage)
 
-      // Send update to other users
-      if (socket) {
-        socket.emit('drawing', {
+      // Send update to other users (real-time move)
+      if (socket && isTeacher) {
+        socket.emit('element-move', {
+          elementId: updatedImage.id,
           element: updatedImage
         })
       }
@@ -1333,9 +1831,59 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
       setSelectedImage(updatedImage)
 
       // Send update to other users
-      if (socket) {
-        socket.emit('drawing', {
+      if (socket && isTeacher) {
+        socket.emit('element-move', {
+          elementId: updatedImage.id,
           element: updatedImage
+        })
+      }
+      return
+    }
+    
+    // Handle drawing element dragging
+    if (isDraggingElement && selectedElement) {
+      const newX = x - elementDragOffset.x
+      const newY = y - elementDragOffset.y
+      const snapped = snapPoint(newX, newY)
+      
+      let updatedElement: DrawingElement
+      
+      if (selectedElement.x !== undefined && selectedElement.y !== undefined) {
+        // For elements with x,y position (rectangles, circles, text, etc.)
+        updatedElement = {
+          ...selectedElement,
+          x: snapped.x,
+          y: snapped.y
+        }
+      } else if (selectedElement.points.length >= 2) {
+        // For elements with points array (freehand, lines, etc.)
+        const deltaX = snapped.x - selectedElement.points[0]
+        const deltaY = snapped.y - selectedElement.points[1]
+        
+        const newPoints = []
+        for (let i = 0; i < selectedElement.points.length; i += 2) {
+          newPoints.push(selectedElement.points[i] + deltaX)
+          newPoints.push(selectedElement.points[i + 1] + deltaY)
+        }
+        
+        updatedElement = {
+          ...selectedElement,
+          points: newPoints
+        }
+      } else {
+        return // Can't move this element type
+      }
+
+      setDrawingElements(prev => 
+        prev.map(el => el.id === selectedElement.id ? updatedElement : el)
+      )
+      setSelectedElement(updatedElement)
+
+      // Send update to other users in real-time
+      if (socket && isTeacher) {
+        socket.emit('element-move', {
+          elementId: selectedElement.id,
+          element: updatedElement
         })
       }
       return
@@ -1397,13 +1945,20 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
       }
       
       setCurrentDrawingElement(previewElement)
-    } else if (startPoint && (tool === 'rectangle' || tool === 'circle' || tool === 'triangle' || tool === 'line' || tool === 'arrow')) {
+    } else if (startPoint && (tool === 'rectangle' || tool === 'circle' || tool === 'triangle' || tool === 'line' || tool === 'arrow' || 
+               tool === 'filled-rectangle' || tool === 'filled-circle' || tool === 'filled-triangle' || 
+               tool === 'diamond' || tool === 'filled-diamond' || tool === 'ellipse' || tool === 'filled-ellipse')) {
       const width = x - startPoint.x
       const height = y - startPoint.y
       
+  // Map filled shapes to base types and determine fill (preserve diamond/ellipse)
+  const baseType = tool.startsWith('filled-') ? tool.replace('filled-', '') : tool
+      
+      const shouldFill = tool.startsWith('filled-') || tool === 'filled-diamond' || tool === 'filled-ellipse'
+      
       const previewElement: DrawingElement = {
         id: `preview-${tool}`,
-        type: tool,
+        type: baseType as any,
         points: tool === 'line' || tool === 'arrow' ? [startPoint.x, startPoint.y, x, y] : [],
         x: tool === 'line' || tool === 'arrow' ? undefined : Math.min(startPoint.x, x),
         y: tool === 'line' || tool === 'arrow' ? undefined : Math.min(startPoint.y, y),
@@ -1412,7 +1967,7 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
         options: {
           stroke: strokeColor,
           strokeWidth: strokeWidth,
-          fill: fillColor,
+          fill: shouldFill ? (fillColor === 'transparent' ? strokeColor : fillColor) : 'transparent',
           roughness: roughness
         },
         timestamp: Date.now()
@@ -1424,6 +1979,13 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
 
   const handlePointerUp = (e: React.PointerEvent) => {
     e.preventDefault()
+    
+    // Handle element dragging end
+    if (isDraggingElement) {
+      setIsDraggingElement(false)
+      setElementDragOffset({x: 0, y: 0})
+      return
+    }
     
     // Handle image dragging end
     if (isDraggingImage || isResizingImage) {
@@ -1472,17 +2034,25 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
         setDrawingElements(prev => [...prev, element])
         
         if (isConnected) {
+          // Persist element via legacy channel to ensure students receive final element
           sendDrawingElement(element)
         }
         
         setCurrentDrawingElement(null)
       }
       currentPathRef.current = []
-    } else if (startPoint && (tool === 'rectangle' || tool === 'circle' || tool === 'triangle' || tool === 'line' || tool === 'arrow')) {
+    } else if (startPoint && (tool === 'rectangle' || tool === 'circle' || tool === 'triangle' || tool === 'line' || tool === 'arrow' || 
+               tool === 'filled-rectangle' || tool === 'filled-circle' || tool === 'filled-triangle' || 
+               tool === 'diamond' || tool === 'filled-diamond' || tool === 'ellipse' || tool === 'filled-ellipse')) {
       const width = x - startPoint.x
       const height = y - startPoint.y
       
       if (Math.abs(width) > 5 || Math.abs(height) > 5) {
+  // Map filled shapes to base types and determine fill (preserve diamond/ellipse)
+  const baseType = tool.startsWith('filled-') ? tool.replace('filled-', '') : tool
+        
+        const shouldFill = tool.startsWith('filled-') || tool === 'filled-diamond' || tool === 'filled-ellipse'
+        
         let element: DrawingElement
         
         if (tool === 'line' || tool === 'arrow') {
@@ -1500,7 +2070,7 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
         } else {
           element = {
             id: `${tool}-${Date.now()}`,
-            type: tool,
+            type: baseType as any,
             points: [],
             x: Math.min(startPoint.x, x),
             y: Math.min(startPoint.y, y),
@@ -1509,7 +2079,7 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
             options: {
               stroke: strokeColor,
               strokeWidth: strokeWidth,
-              fill: fillColor,
+              fill: shouldFill ? (fillColor === 'transparent' ? strokeColor : fillColor) : 'transparent',
               roughness: roughness
             },
             timestamp: Date.now()
@@ -1595,14 +2165,21 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
     
     if (confirmEnd) {
       try {
+        const userToken = localStorage.getItem('userToken')
+        
+        if (!userToken) {
+          alert('❌ Authentication error. Please login again.')
+          return
+        }
+        
         console.log('🛑 Ending class with ID:', currentClassId)
         const response = await fetch(`/api/room-classes/${currentClassId}/end`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userToken}`
           },
           body: JSON.stringify({
-            teacherId: localStorage.getItem('userId'),
             message: 'The class has been ended by the teacher.'
           })
         })
@@ -1742,6 +2319,7 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
     return { label: 'Low', color: 'text-red-600', bgColor: 'bg-red-100' }
   }
 
+
   if (bandwidthMode === 'ultra-low') {
     return (
       <div className="h-full flex items-center justify-center bg-gray-100 rounded-lg">
@@ -1755,42 +2333,44 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3">
-              <User className="w-6 h-6" />
-              <div>
-                <h1 className="text-lg font-bold">{subject} - {lectureTitle}</h1>
-                <p className="text-blue-100 text-sm">Room: {roomId}</p>
+    <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-slate-50 to-gray-100" style={{ minHeight: '100vh' }}>
+      {/* Header - Premium Minimalistic Design */}
+      <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-800 text-white px-3 sm:px-4 py-2 sm:py-3 shadow-xl backdrop-blur-md border-b border-gray-700/30 z-10">
+        <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-5">
+          <div className="flex items-center space-x-3 sm:space-x-5 min-w-0 flex-1">
+            <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
+              <div className="p-2 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 shadow-lg">
+                <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-100" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-base font-semibold truncate text-gray-100">{subject} - {lectureTitle}</h1>
+                <p className="text-gray-300 text-xs truncate font-medium">Room: {roomId}</p>
               </div>
             </div>
             
-            <div className="text-sm text-blue-100">
-              Teacher: {teacherName}
+            <div className="hidden sm:block text-xs text-gray-200 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20">
+              <span className="font-medium">Teacher:</span> {teacherName}
             </div>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <div className="text-center">
-              <div className="text-sm text-blue-100">Live Time</div>
-              <div className="text-lg font-bold">{formatElapsedTime(elapsedTime)}</div>
+          <div className="flex items-center space-x-3 sm:space-x-4 flex-wrap">
+            <div className="text-center bg-white/10 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl backdrop-blur-md border border-white/20 shadow-lg">
+              <div className="text-xs text-gray-300 font-medium">Live Time</div>
+              <div className="text-sm font-bold text-gray-100">{formatElapsedTime(elapsedTime)}</div>
             </div>
             
-            <div className="text-center">
-              <div className="text-sm text-blue-100">Connection</div>
-              <div className={`text-sm font-bold flex items-center space-x-1 ${isConnected ? 'text-green-300' : 'text-red-300'}`}>
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-                <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
+            <div className="text-center bg-white/10 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl backdrop-blur-md border border-white/20 shadow-lg">
+              <div className="text-xs text-gray-300 font-medium">Connection</div>
+              <div className={`text-xs sm:text-sm font-bold flex items-center space-x-2 ${isConnected ? 'text-emerald-300' : 'text-red-300'}`}>
+                <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50' : 'bg-red-400'}`}></div>
+                <span className="hidden sm:inline">{isConnected ? 'Connected' : 'Disconnected'}</span>
               </div>
             </div>
             
-            <div className="text-center">
-              <div className="text-sm text-blue-100">Participants</div>
-              <div className="text-sm font-bold flex items-center space-x-1">
-                <Users className="w-4 h-4" />
+            <div className="text-center bg-white/10 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl backdrop-blur-md border border-white/20 shadow-lg">
+              <div className="text-xs text-gray-300 font-medium">Participants</div>
+              <div className="text-xs sm:text-sm font-bold flex items-center space-x-2 justify-center text-gray-100">
+                <Users className="w-3 h-3" />
                 <span>{connectedUsers.length}</span>
               </div>
             </div>
@@ -1798,13 +2378,13 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
             {/* Chat Toggle Button */}
             <button
               onClick={() => setShowChatModal(!showChatModal)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+              className="bg-white/10 hover:bg-white/20 text-white px-2.5 sm:px-3 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 sm:space-x-2 backdrop-blur-md border border-white/20 shadow-lg hover:shadow-xl"
               title="Toggle Chat"
             >
-              <MessageCircle className="w-4 h-4" />
-              <span>Chat</span>
+              <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline text-sm font-medium">Chat</span>
               {connectedUsers.length > 0 && (
-                <span className="bg-blue-300 text-blue-800 text-xs px-2 py-1 rounded-full">
+                <span className="bg-emerald-400 text-emerald-900 text-xs px-2 py-1 rounded-full font-bold shadow-lg">
                   {connectedUsers.length}
                 </span>
               )}
@@ -1813,22 +2393,22 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
             {/* AI Doubt Solver Button for All Users */}
             <button
               onClick={() => setIsAIDoubtVisible(!isAIDoubtVisible)}
-              className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+              className="bg-white/10 hover:bg-white/20 text-white px-2.5 sm:px-3 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 sm:space-x-2 backdrop-blur-md border border-white/20 shadow-lg hover:shadow-xl"
               title="AI Doubt Solver"
             >
-              <Bot className="w-4 h-4" />
-              <span>AI Help</span>
+              <Bot className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline text-sm font-medium">AI Help</span>
             </button>
             
             {/* Compression Stats Button for All Users */}
             <button
               onClick={() => setShowCompressionStats(!showCompressionStats)}
-              className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+              className="bg-white/10 hover:bg-white/20 text-white px-2.5 sm:px-3 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 sm:space-x-2 backdrop-blur-md border border-white/20 shadow-lg hover:shadow-xl"
               title="Compression & Network Stats"
             >
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Stats</span>
-              <span className="bg-green-300 text-green-800 text-xs px-2 py-1 rounded-full">
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline text-sm font-medium">Stats</span>
+              <span className="bg-emerald-400 text-emerald-900 text-xs px-2 py-1 rounded-full font-bold shadow-lg">
                 {compressionStats.compressionRatio > 0 ? 
                   `${compressionStats.compressionRatio.toFixed(1)}x` : 
                   '0x'
@@ -1839,35 +2419,37 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
             {isTeacher && (
               <button
                 onClick={handleEndClass}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 shadow-lg hover:shadow-xl border border-red-400/30"
               >
                 <LogOut className="w-4 h-4" />
-                <span>End Class</span>
+                <span className="font-medium">End Class</span>
               </button>
             )}
           </div>
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+  <div className="flex-1 flex overflow-visible">
         {/* Left Sidebar */}
-        <div className={`${showSidebar ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden border-r bg-white flex flex-col`}>
-          <div className="p-4 border-b flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-blue-500" />
-              <h3 className="font-semibold">AI Assistant & Tools</h3>
+        <div className={`${showSidebar ? 'w-80 sm:w-96' : 'w-0'} transition-all duration-500 ease-in-out overflow-hidden border-r border-gray-200 bg-gradient-to-b from-white to-gray-50 flex flex-col shadow-lg`}>
+          <div className="p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-xl">
+                <Users className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="font-bold text-gray-800">AI Assistant & Tools</h3>
             </div>
             <button
               onClick={() => setShowSidebar(false)}
-              className="p-1 rounded-md hover:bg-gray-200 transition-colors"
+              className="p-2 rounded-xl hover:bg-white transition-all duration-200 transform hover:scale-105 shadow-sm"
               title="Close Sidebar"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 text-gray-600" />
             </button>
           </div>
           
           {/* Sidebar Content */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-visible">
             {/* Hand Raise Button for Students */}
             {!isTeacher && (
               <div className="p-4 border-b">
@@ -1936,17 +2518,46 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
         </div>
 
         {/* Main whiteboard area */}
-        <div className="flex-1 flex flex-col">
-          {/* Toolbar */}
+        <div className="flex-1 flex flex-col relative">
+          
+          {/* Floating toolbar toggle - only for teachers, positioned in canvas corner */}
           {isTeacher && (
-            <div className="p-4 border-b bg-white shadow-sm">
-              <div className="flex items-center space-x-3 overflow-x-auto">
+            <button
+              onClick={() => setShowToolbar(!showToolbar)}
+              className={`absolute top-4 right-4 z-50 p-3 rounded-full shadow-lg transition-all duration-200 ${
+                showToolbar 
+                  ? 'bg-red-500 hover:bg-red-600 text-white' 
+                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
+              title={showToolbar ? 'Hide Toolbar' : 'Show Toolbar'}
+            >
+              {showToolbar ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          )}
+          
+          {/* Toolbar */}
+          {isTeacher && showToolbar && (
+            <div className="absolute top-4 left-4 right-20 z-40 p-3 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200"
+                 style={{ 
+                   right: showSidebar ? '24rem' : '5rem'  // Adjust based on sidebar state
+                 }}>
+              <div className="flex items-center space-x-2 sm:space-x-3 overflow-x-auto scrollbar-thin scrollbar-hide sm:scrollbar-thin pb-1">
                 {/* Tools */}
-                <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                <div className="flex items-center space-x-1 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-1.5 shadow-sm border border-gray-200">
                   <button
                     onClick={() => setTool('select')}
-                    className={`p-2 rounded-md transition-colors ${
-                      tool === 'select' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
+                    className={`p-2 sm:p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                      tool === 'select' 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                        : 'hover:bg-white hover:shadow-md'
                     }`}
                     title="Select"
                   >
@@ -1954,8 +2565,10 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                   </button>
                   <button
                     onClick={() => setTool('hand')}
-                    className={`p-2 rounded-md transition-colors ${
-                      tool === 'hand' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
+                    className={`p-2 sm:p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                      tool === 'hand' 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                        : 'hover:bg-white hover:shadow-md'
                     }`}
                     title="Pan"
                   >
@@ -1963,11 +2576,13 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                   </button>
                 </div>
 
-                <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                <div className="flex items-center space-x-1 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-1.5 shadow-sm border border-gray-200">
                   <button
                     onClick={() => setTool('pen')}
-                    className={`p-2 rounded-md transition-colors ${
-                      tool === 'pen' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
+                    className={`p-2 sm:p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                      tool === 'pen' 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                        : 'hover:bg-white hover:shadow-md'
                     }`}
                     title="Pen"
                   >
@@ -1975,8 +2590,10 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                   </button>
                   <button
                     onClick={() => setTool('highlighter')}
-                    className={`p-2 rounded-md transition-colors ${
-                      tool === 'highlighter' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
+                    className={`p-2 sm:p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                      tool === 'highlighter' 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                        : 'hover:bg-white hover:shadow-md'
                     }`}
                     title="Highlighter"
                   >
@@ -1984,8 +2601,10 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                   </button>
                   <button
                     onClick={() => setTool('eraser')}
-                    className={`p-2 rounded-md transition-colors ${
-                      tool === 'eraser' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
+                    className={`p-2 sm:p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                      tool === 'eraser' 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                        : 'hover:bg-white hover:shadow-md'
                     }`}
                     title="Eraser"
                   >
@@ -1993,72 +2612,154 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                   </button>
                 </div>
 
-                <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                {/* Shapes Dropdown */}
+                <div className="relative">
                   <button
-                    onClick={() => setTool('rectangle')}
-                    className={`p-2 rounded-md transition-colors ${
-                      tool === 'rectangle' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
+                    onClick={() => setShowShapeDropdown(!showShapeDropdown)}
+                    className={`flex items-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg border ${
+                      shapeGroups.some(group => group.tools.some(t => t.tool === tool)) 
+                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-indigo-500/30 border-indigo-400/50' 
+                        : 'bg-white/90 hover:bg-white hover:shadow-xl border-gray-200/50 text-gray-700'
                     }`}
-                    title="Rectangle"
+                    title="Shapes"
                   >
-                    <Square className="w-4 h-4" />
+                    {(() => {
+                      const currentShape = getCurrentShapeInfo(tool)
+                      const IconComponent = currentShape.icon
+                      return (
+                        <>
+                          {IconComponent ? <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" /> : (
+                            <div className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                              tool === 'filled-rectangle' ? 'bg-current rounded-sm' :
+                              tool === 'filled-circle' ? 'bg-current rounded-full' :
+                              tool === 'filled-triangle' ? 'w-0 h-0 border-l-2 border-r-2 border-b-4 border-l-transparent border-r-transparent border-b-current' :
+                              tool === 'filled-diamond' ? 'bg-current transform rotate-45' :
+                              tool === 'diamond' ? 'border-2 border-current transform rotate-45' :
+                              tool === 'filled-ellipse' ? 'bg-current rounded-full h-2.5 sm:h-3' :
+                              tool === 'ellipse' ? 'border-2 border-current rounded-full h-2.5 sm:h-3' :
+                              'bg-current rounded-sm'
+                            }`}></div>
+                          )}
+                          <span className="hidden sm:inline text-sm font-medium">{currentShape.name}</span>
+                          <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-300 ${showShapeDropdown ? 'rotate-180' : ''}`} />
+                        </>
+                      )
+                    })()}
                   </button>
-                  <button
-                    onClick={() => setTool('circle')}
-                    className={`p-2 rounded-md transition-colors ${
-                      tool === 'circle' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
-                    }`}
-                    title="Circle"
-                  >
-                    <Circle className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setTool('triangle')}
-                    className={`p-2 rounded-md transition-colors ${
-                      tool === 'triangle' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
-                    }`}
-                    title="Triangle"
-                  >
-                    <Triangle className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setTool('line')}
-                    className={`p-2 rounded-md transition-colors ${
-                      tool === 'line' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
-                    }`}
-                    title="Line"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setTool('arrow')}
-                    className={`p-2 rounded-md transition-colors ${
-                      tool === 'arrow' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
-                    }`}
-                    title="Arrow"
-                  >
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                  
+                  {showShapeDropdown && (
+                    <div 
+                      className="fixed inset-0 z-[1000] bg-black/20 backdrop-blur-sm" 
+                      onClick={() => setShowShapeDropdown(false)}
+                    >
+                      <div 
+                        className="absolute bg-white backdrop-blur-xl border-2 border-gray-300 rounded-3xl shadow-2xl w-[90vw] max-w-[380px] max-h-[85vh] overflow-hidden z-[1100] modal-animate"
+                        style={{
+                          left: '50%',
+                          top: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 12px 25px -8px rgba(0, 0, 0, 0.3)'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="p-4 sm:p-5 border-b border-gray-100">
+                          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center space-x-2">
+                            <Square className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-500" />
+                            <span>Shape Tools</span>
+                          </h3>
+                          <p className="text-sm text-gray-500 mt-1">Choose a shape to draw</p>
+                        </div>
+                        
+                        <div className="overflow-y-auto max-h-[65vh] custom-scrollbar">
+                          {shapeGroups.map((group, groupIndex) => (
+                            <div key={group.name} className={groupIndex > 0 ? 'border-t border-gray-100' : ''}>
+                              <div className="px-4 sm:px-5 py-3 bg-gradient-to-r from-gray-50 to-gray-100">
+                                <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                  {group.name}
+                                </h4>
+                              </div>
+                              <div className="p-2 sm:p-3 space-y-1">
+                                {group.tools.map((shapeItem) => {
+                                  const IconComponent = shapeItem.icon
+                                  return (
+                                    <button
+                                      key={shapeItem.tool}
+                                      onClick={() => {
+                                        setTool(shapeItem.tool)
+                                        setShowShapeDropdown(false)
+                                      }}
+                                      className={`w-full flex items-center space-x-3 p-3 sm:p-4 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] touch-manipulation ${
+                                        tool === shapeItem.tool 
+                                          ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30' 
+                                          : 'hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:shadow-md text-gray-700'
+                                      }`}
+                                      title={shapeItem.name}
+                                    >
+                                      {IconComponent ? (
+                                        <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+                                      ) : (
+                                        <div className={`w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 ${
+                                          shapeItem.tool === 'filled-rectangle' ? 'bg-current rounded-sm' :
+                                          shapeItem.tool === 'filled-circle' ? 'bg-current rounded-full' :
+                                          shapeItem.tool === 'filled-triangle' ? 'w-0 h-0 border-l-2 border-r-2 border-b-4 border-l-transparent border-r-transparent border-b-current' :
+                                          shapeItem.tool === 'filled-diamond' ? 'bg-current transform rotate-45' :
+                                          shapeItem.tool === 'diamond' ? 'border-2 border-current transform rotate-45' :
+                                          shapeItem.tool === 'filled-ellipse' ? 'bg-current rounded-full h-3 sm:h-4' :
+                                          shapeItem.tool === 'ellipse' ? 'border-2 border-current rounded-full h-3 sm:h-4' :
+                                          'bg-current rounded-sm'
+                                        }`}></div>
+                                      )}
+                                      <span className="text-sm sm:text-base font-medium">{shapeItem.name}</span>
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                          
+                          <div className="border-t border-gray-100">
+                            <div className="px-4 sm:px-5 py-3 bg-gradient-to-r from-gray-50 to-gray-100">
+                              <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                Media
+                              </h4>
+                            </div>
+                            <div className="p-2 sm:p-3">
+                              <button
+                                onClick={() => {
+                                  setTool('image')
+                                  setShowShapeDropdown(false)
+                                  fileInputRef.current?.click()
+                                }}
+                                className={`w-full flex items-center space-x-3 p-3 sm:p-4 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] touch-manipulation ${
+                                  tool === 'image' 
+                                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30' 
+                                    : 'hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:shadow-md text-gray-700'
+                                }`}
+                                title="Add Image"
+                              >
+                                <ImagePlus className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+                                <span className="text-sm sm:text-base font-medium">Add Image</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Text Tool */}
+                <div className="flex items-center space-x-1 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-1.5 shadow-sm border border-gray-200">
                   <button
                     onClick={() => setTool('text')}
-                    className={`p-2 rounded-md transition-colors ${
-                      tool === 'text' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
+                    className={`p-2 sm:p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                      tool === 'text' 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                        : 'hover:bg-white hover:shadow-md'
                     }`}
                     title="Text"
                   >
                     <Type className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setTool('image')
-                      fileInputRef.current?.click()
-                    }}
-                    className={`p-2 rounded-md transition-colors ${
-                      tool === 'image' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
-                    }`}
-                    title="Add Image"
-                  >
-                    <ImagePlus className="w-4 h-4" />
                   </button>
                 </div>
 
@@ -2066,31 +2767,75 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                 <div className="relative">
                   <button
                     onClick={() => setShowColorPalette(!showColorPalette)}
-                    className="p-2 rounded-md border border-gray-300 flex items-center space-x-2"
+                    className="flex items-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg border bg-white/90 hover:bg-white hover:shadow-xl border-gray-200/50 text-gray-700"
+                    title="Color Palette"
                   >
                     <div 
-                      className="w-6 h-6 rounded border"
+                      className="w-4 h-4 sm:w-5 sm:h-5 rounded-xl border-2 border-white shadow-lg"
                       style={{ backgroundColor: strokeColor }}
                     ></div>
-                    <Palette className="w-4 h-4" />
+                    <Palette className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline text-sm font-medium">Color</span>
+                    <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-300 ${showColorPalette ? 'rotate-180' : ''}`} />
                   </button>
                   
                   {showColorPalette && (
-                    <div className="absolute top-full left-0 mt-2 p-3 bg-white rounded-lg shadow-lg border z-50">
-                      <div className="grid grid-cols-5 gap-2">
-                        {colors.map(color => (
-                          <button
-                            key={color}
-                            className={`w-8 h-8 rounded border-2 ${
-                              strokeColor === color ? 'border-blue-500' : 'border-gray-300'
-                            }`}
-                            style={{ backgroundColor: color }}
-                            onClick={() => {
-                              setStrokeColor(color)
-                              setShowColorPalette(false)
-                            }}
-                          />
-                        ))}
+                    <div 
+                      className="fixed inset-0 z-modal bg-black/20 backdrop-blur-sm" 
+                      onClick={() => setShowColorPalette(false)}
+                    >
+                      <div 
+                        className="absolute bg-white backdrop-blur-xl border-2 border-gray-300 rounded-3xl shadow-2xl w-[90vw] max-w-[420px] max-h-[85vh] overflow-hidden z-modal-content modal-animate"
+                        style={{
+                          left: '50%',
+                          top: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 12px 25px -8px rgba(0, 0, 0, 0.3)'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="p-4 sm:p-5 border-b border-gray-100">
+                          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center space-x-2">
+                            <Palette className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-500" />
+                            <span>Color Palette</span>
+                          </h3>
+                          <p className="text-sm text-gray-500 mt-1">Choose a color for drawing</p>
+                        </div>
+                        
+                        <div className="p-4 sm:p-6">
+                          <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3">
+                            {colors.map(color => (
+                              <button
+                                key={color}
+                                className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-2xl border-3 transition-all duration-300 transform hover:scale-110 active:scale-95 touch-manipulation ${
+                                  strokeColor === color 
+                                    ? 'border-indigo-500 shadow-2xl shadow-indigo-500/50 scale-110 ring-4 ring-indigo-200' 
+                                    : 'border-gray-200 hover:border-gray-400 hover:shadow-lg'
+                                }`}
+                                style={{ backgroundColor: color }}
+                                onClick={() => {
+                                  setStrokeColor(color)
+                                  setShowColorPalette(false)
+                                }}
+                                title={`Select ${color}`}
+                              />
+                            ))}
+                          </div>
+                          
+                          <div className="mt-4 sm:mt-6 pt-4 border-t border-gray-100">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-3">Current Selection</h4>
+                            <div className="flex items-center space-x-3 p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl">
+                              <div 
+                                className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl border-2 border-white shadow-lg"
+                                style={{ backgroundColor: strokeColor }}
+                              ></div>
+                              <div>
+                                <p className="text-sm sm:text-base font-medium text-gray-800">{strokeColor.toUpperCase()}</p>
+                                <p className="text-xs sm:text-sm text-gray-500">Active Color</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -2157,17 +2902,17 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-1.5 shadow-sm border border-gray-200">
                   <button
                     onClick={handleUndo}
-                    className="p-2 rounded-md hover:bg-gray-200 transition-colors"
+                    className="p-2 sm:p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 hover:bg-white hover:shadow-md"
                     title="Undo"
                   >
                     <Undo className="w-4 h-4" />
                   </button>
                   <button
                     onClick={clearCanvas}
-                    className="p-2 rounded-md hover:bg-gray-200 transition-colors"
+                    className="p-2 sm:p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 hover:bg-red-50 hover:shadow-md hover:text-red-600"
                     title="Clear All"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -2205,7 +2950,7 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                     
                     {/* Grid Options Dropdown */}
                     {showGridOptions && (
-                      <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-3 z-50 min-w-56">
+                      <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-3 z-[1100] min-w-56">
                         <div className="text-sm font-medium mb-3">Whiteboard Settings</div>
                         
                         {/* Paper Type */}
@@ -2279,7 +3024,21 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                             <label className="text-xs text-gray-600 mb-1 block">Grid Type</label>
                             <div className="flex space-x-2">
                               <button
-                                onClick={() => setGridType('lines')}
+                                onClick={() => {
+                                  setGridType('lines')
+                                  // Sync grid settings to all students
+                                  if (socket && isTeacher) {
+                                    socket.emit('paperStyleChanged', {
+                                      sessionId: roomId,
+                                      paperType,
+                                      paperTexture,
+                                      showGrid,
+                                      gridType: 'lines',
+                                      gridSize,
+                                      snapToGrid
+                                    })
+                                  }
+                                }}
                                 className={`px-2 py-1 text-xs rounded ${
                                   gridType === 'lines' ? 'bg-blue-500 text-white' : 'bg-gray-100'
                                 }`}
@@ -2287,7 +3046,21 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                                 Lines
                               </button>
                               <button
-                                onClick={() => setGridType('dots')}
+                                onClick={() => {
+                                  setGridType('dots')
+                                  // Sync grid settings to all students
+                                  if (socket && isTeacher) {
+                                    socket.emit('paperStyleChanged', {
+                                      sessionId: roomId,
+                                      paperType,
+                                      paperTexture,
+                                      showGrid,
+                                      gridType: 'dots',
+                                      gridSize,
+                                      snapToGrid
+                                    })
+                                  }
+                                }}
                                 className={`px-2 py-1 text-xs rounded ${
                                   gridType === 'dots' ? 'bg-blue-500 text-white' : 'bg-gray-100'
                                 }`}
@@ -2307,7 +3080,22 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                               min="10"
                               max="50"
                               value={gridSize}
-                              onChange={(e) => setGridSize(Number(e.target.value))}
+                              onChange={(e) => {
+                                const newGridSize = Number(e.target.value)
+                                setGridSize(newGridSize)
+                                // Sync grid size to all students
+                                if (socket && isTeacher) {
+                                  socket.emit('paperStyleChanged', {
+                                    sessionId: roomId,
+                                    paperType,
+                                    paperTexture,
+                                    showGrid,
+                                    gridType,
+                                    gridSize: newGridSize,
+                                    snapToGrid
+                                  })
+                                }
+                              }}
                               className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                             />
                             <div className="flex justify-between text-xs text-gray-400 mt-1">
@@ -2323,7 +3111,21 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                             <input
                               type="checkbox"
                               checked={snapToGrid}
-                              onChange={(e) => setSnapToGrid(e.target.checked)}
+                              onChange={(e) => {
+                                setSnapToGrid(e.target.checked)
+                                // Sync snap to grid setting to all students
+                                if (socket && isTeacher) {
+                                  socket.emit('paperStyleChanged', {
+                                    sessionId: roomId,
+                                    paperType,
+                                    paperTexture,
+                                    showGrid,
+                                    gridType,
+                                    gridSize,
+                                    snapToGrid: e.target.checked
+                                  })
+                                }
+                              }}
                               className="rounded"
                             />
                             <span>Snap to Grid</span>
@@ -2343,15 +3145,25 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
               </div>
             </div>
           )}
-
+          
           {/* Canvas */}
-          <div className="flex-1 relative bg-gray-100 p-4">
+          <div className={`flex-1 relative bg-gradient-to-br from-gray-100 to-gray-200 p-2 sm:p-3 md:p-4 overflow-visible transition-all duration-300 ${
+            showSidebar ? '' : 'md:p-6 lg:p-8'  // More padding when sidebar is closed for better visual balance
+          }`}>
             {/* Paper-like container with enhanced shadow and edge effects */}
-            <div className="w-full h-full relative bg-white rounded-sm border border-gray-200" 
+            <div className="relative bg-white rounded-2xl border border-gray-300 shadow-2xl mx-auto" 
                  style={{
+                   // Maintain unified aspect ratio centered within available space
+                   width: '100%',
+                   height: '100%',
+                   maxWidth: '100%',
+                   maxHeight: '100%',
+                   aspectRatio: boardAspect,
+                   // When container is constrained by height, aspectRatio ensures width adjusts and centers
+                   
                    boxShadow: paperTexture ? 
-                     '0 8px 25px -5px rgba(0, 0, 0, 0.15), 0 4px 10px -3px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2)' :
-                     '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                     '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 12px 25px -8px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(255, 255, 255, 0.3), inset 0 -1px 2px rgba(0, 0, 0, 0.05)' :
+                     '0 20px 40px -8px rgba(0, 0, 0, 0.15), 0 8px 16px -4px rgba(0, 0, 0, 0.1), inset 0 2px 4px rgba(255, 255, 255, 0.2), inset 0 -1px 2px rgba(0, 0, 0, 0.03)',
                    background: paperTexture ? 
                      `linear-gradient(135deg, #fefefe 0%, #fafafa 100%)` :
                      '#fefefe',
@@ -2381,16 +3193,20 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
               
               <canvas
                 ref={canvasRef}
-                className="absolute inset-0 w-full h-full rounded-sm"
+                className="absolute inset-0 w-full h-full rounded-2xl select-none z-0"
                 style={{ 
                   touchAction: 'none',
                   cursor: cursorType,
-                  background: getPaperBackground()
+                  background: getPaperBackground(),
+                  WebkitUserSelect: 'none',
+                  WebkitTouchCallout: 'none',
+                  WebkitTapHighlightColor: 'transparent'
                 }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
+                onContextMenu={(e) => e.preventDefault()}
               />
               
               {/* Paper holes for notebook style */}
@@ -2440,7 +3256,8 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
             </div>
           )}
         </div>
-
+        {/* End canvas container */}
+        
         {/* Left Sidebar toggle button */}
         {!showSidebar && (
           <button
@@ -2486,29 +3303,35 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
       
       {/* Chat Modal */}
       {showChatModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-2xl w-96 h-[80vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md h-[85vh] flex flex-col overflow-hidden border border-gray-200">
             {/* Chat Modal Header */}
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-t-lg flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <MessageCircle className="w-5 h-5" />
-                <h3 className="font-semibold">Class Chat</h3>
-                <span className="text-blue-200 text-sm">({connectedUsers.length} online)</span>
+            <div className="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white p-4 sm:p-6 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <MessageCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Class Chat</h3>
+                  <span className="text-blue-100 text-sm">({connectedUsers.length} online)</span>
+                </div>
               </div>
               <button
                 onClick={() => setShowChatModal(false)}
-                className="text-white hover:text-blue-200 transition-colors"
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-200 transform hover:scale-105"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Connected Users List */}
-            <div className="bg-gray-50 border-b border-gray-200 p-2">
-              <div className="flex items-center space-x-1 text-xs text-gray-600">
-                <Users className="w-3 h-3" />
-                <span>Online:</span>
-                <div className="flex flex-wrap gap-1">
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 p-3 sm:p-4">
+              <div className="flex items-center space-x-2 text-sm text-gray-700">
+                <div className="p-1.5 bg-green-100 rounded-lg">
+                  <Users className="w-4 h-4 text-green-600" />
+                </div>
+                <span className="font-medium">Online:</span>
+                <div className="flex flex-wrap gap-1.5">
                   {connectedUsers.slice(0, 5).map(user => (
                     <span 
                       key={user.id}
@@ -2538,6 +3361,8 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
                 connectedUsers={connectedUsers}
                 isVisible={true}
                 onToggleVisibility={() => {}}
+                messages={chatMessages}
+                setMessages={setChatMessages}
               />
             </div>
           </div>

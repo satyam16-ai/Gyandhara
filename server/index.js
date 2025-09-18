@@ -83,15 +83,34 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true)
     
-    if (allowedOrigins.indexOf(origin) !== -1 || !config.IS_PRODUCTION) {
+    console.log(`🔍 CORS check for origin: ${origin}`)
+    console.log(`🔍 IS_PRODUCTION: ${config.IS_PRODUCTION}`)
+    
+    // In development, allow all localhost origins
+    if (!config.IS_PRODUCTION) {
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        console.log(`✅ CORS allowed (localhost): ${origin}`)
+        return callback(null, true)
+      }
+    }
+    
+    // Check against allowed origins
+    const isAllowed = allowedOrigins.includes(origin) || allowedOrigins.some(allowed => 
+      allowed instanceof RegExp ? allowed.test(origin) : allowed === origin
+    )
+    
+    if (isAllowed) {
+      console.log(`✅ CORS allowed (allowedOrigins): ${origin}`)
       callback(null, true)
     } else {
+      console.log(`❌ CORS blocked origin: ${origin}`)
+      console.log(`❌ AllowedOrigins:`, allowedOrigins)
       callback(new Error('Not allowed by CORS'))
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with', 'Accept', 'Origin', 'X-Requested-With']
 }))
 
 app.use(express.json({ limit: '50mb' }))
@@ -916,6 +935,19 @@ io.on('connection', (socket) => {
     socket.to(socket.sessionId).emit('drawing-preview-update', {
       element: previewData.element,
       isComplete: previewData.isComplete,
+      teacherId: socket.userId,
+      timestamp: Date.now()
+    })
+  })
+  
+  // Handle element move for real-time synchronization
+  socket.on('element-move', (moveData) => {
+    if (socket.role !== 'teacher') return
+    
+    // Broadcast element move to students in real-time
+    socket.to(socket.sessionId).emit('element-moved', {
+      elementId: moveData.elementId,
+      element: moveData.element,
       teacherId: socket.userId,
       timestamp: Date.now()
     })

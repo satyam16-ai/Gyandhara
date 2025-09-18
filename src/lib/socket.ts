@@ -6,7 +6,9 @@ class GyaandharaSocket {
   private serverUrl: string
   
   constructor(serverUrl?: string) {
-    this.serverUrl = serverUrl || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gyandhara-backend.onrender.com'
+    const isDev = process.env.NODE_ENV !== 'production'
+    const defaultUrl = isDev ? 'http://localhost:10000' : 'https://gyandhara-backend.onrender.com'
+    this.serverUrl = serverUrl || process.env.NEXT_PUBLIC_BACKEND_URL || defaultUrl
   }
 
   connect() {

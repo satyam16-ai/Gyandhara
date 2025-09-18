@@ -4,6 +4,7 @@ export { default as BandwidthMonitor } from './BandwidthMonitor'
 
 // Dashboard Components  
 export { default as LandingPage } from './LandingPage'
+export { default as StorytellingLandingPage } from './StorytellingLandingPage'
 export { default as NewTeacherDashboard } from './NewTeacherDashboard'
 export { default as NewStudentDashboard } from './NewStudentDashboard'
 

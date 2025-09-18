@@ -320,10 +320,10 @@ export default function StudentLoginPage() {
               }}
               className="text-xs sm:text-sm bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 font-medium px-2"
             >
-              {isRegister 
+              {/* {isRegister 
                 ? 'Already have a student account? Sign in' 
                 : "Don't have a student account? Register"
-              }
+              } */}
             </button>
           </div>
 

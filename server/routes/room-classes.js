@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const mongoose = require('mongoose')
 const { RoomClass, ClassSession, User, SessionParticipant } = require('../models')
+const { authenticateToken } = require('../middleware/auth')
 
 // Get a specific class by ID
 router.get('/:classId', async (req, res) => {
@@ -240,18 +241,18 @@ router.post('/:classId/start', async (req, res) => {
 })
 
 // Join a class (student attendance)
-router.post('/:classId/join', async (req, res) => {
+router.post('/:classId/join', authenticateToken, async (req, res) => {
   try {
     const { classId } = req.params
-    const { userId } = req.body
+    const userId = req.userId // Get userId from authenticated token
 
-    console.log('📋 Join class request:', { classId, userId })
+    console.log('📋 Join class request:', { classId, userId, userRole: req.userRole })
 
     if (!userId) {
-      console.log('❌ Missing userId in join request')
+      console.log('❌ Missing userId from authentication')
       return res.status(400).json({
         success: false,
-        error: 'User ID is required'
+        error: 'Authentication failed'
       })
     }
 
@@ -388,10 +389,10 @@ router.post('/:classId/join', async (req, res) => {
 })
 
 // Leave a class (student leaves)
-router.post('/:classId/leave', async (req, res) => {
+router.post('/:classId/leave', authenticateToken, async (req, res) => {
   try {
     const { classId } = req.params
-    const { userId } = req.body
+    const userId = req.userId // Get userId from authenticated token
 
     if (!userId) {
       return res.status(400).json({
@@ -527,15 +528,16 @@ router.get('/teacher/:teacherId/upcoming', async (req, res) => {
 })
 
 //End a class (teacher ends the class)
-router.post('/:classId/end', async (req, res) => {
+router.post('/:classId/end', authenticateToken, async (req, res) => {
   try {
     const { classId } = req.params
-    const { teacherId, message } = req.body
+    const { message } = req.body
+    const teacherId = req.userId // Get teacherId from authenticated token
 
     if (!teacherId) {
       return res.status(400).json({
         success: false,
-        error: 'Teacher ID is required'
+        error: 'Authentication failed'
       })
     }
 

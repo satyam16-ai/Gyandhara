@@ -6,13 +6,28 @@ export async function POST(
 ) {
   try {
     const { classId } = await params
-    const body = await request.json()
     
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gyandhara-backend.onrender.com'
+    // Handle empty request body gracefully
+    let body = {}
+    try {
+      const text = await request.text()
+      if (text.trim()) {
+        body = JSON.parse(text)
+      }
+    } catch (jsonError) {
+      console.log('No JSON body provided, using empty object')
+    }
+    
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'
+    
+    // Forward the Authorization header from the client
+    const authHeader = request.headers.get('authorization')
+    
     const response = await fetch(`${backendUrl}/api/room-classes/${classId}/leave`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader && { 'Authorization': authHeader })
       },
       body: JSON.stringify(body),
     })

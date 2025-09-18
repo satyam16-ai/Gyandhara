@@ -219,9 +219,9 @@ export default function AdminLogin() {
                   Remember me
                 </label>
 
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+                {/* <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
                   Default: <span className="font-mono font-medium">admin / admin123</span>
-                </span>
+                </span> */}
               </div>
 
               <button

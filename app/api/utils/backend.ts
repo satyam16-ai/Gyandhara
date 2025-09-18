@@ -1,9 +1,12 @@
 // Utility function to get the backend URL
 export function getBackendUrl(): string {
-  // Priority order: NEXT_PUBLIC_BACKEND_URL (client-side) > BACKEND_URL (server-side) > fallback
+  // Prefer localhost in development; otherwise use envs with production fallback
+  const isDev = process.env.NODE_ENV !== 'production'
+  const defaultUrl = isDev ? 'http://localhost:10000' : 'https://gyandhara-backend.onrender.com'
+  // Priority order: NEXT_PUBLIC_BACKEND_URL (client-side) > BACKEND_URL (server-side) > default
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 
                     process.env.BACKEND_URL || 
-                    'https://gyandhara-backend.onrender.com'
+                    defaultUrl
   
   // Remove trailing slash if present
   const cleanUrl = backendUrl.replace(/\/$/, '')

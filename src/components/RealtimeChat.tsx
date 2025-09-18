@@ -28,6 +28,8 @@ interface RealtimeChatProps {
   }>
   isVisible: boolean
   onToggleVisibility: () => void
+  messages?: ChatMessage[]
+  setMessages?: React.Dispatch<React.SetStateAction<ChatMessage[]>>
 }
 
 const RealtimeChat: React.FC<RealtimeChatProps> = ({
@@ -37,10 +39,15 @@ const RealtimeChat: React.FC<RealtimeChatProps> = ({
   isTeacher,
   connectedUsers,
   isVisible,
-  onToggleVisibility
+  onToggleVisibility,
+  messages: externalMessages,
+  setMessages: externalSetMessages
 }) => {
-  // Chat state
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  // Chat state - use external state if provided, otherwise use internal state
+  const [internalMessages, setInternalMessages] = useState<ChatMessage[]>([])
+  const messages = externalMessages || internalMessages
+  const setMessages = externalSetMessages || setInternalMessages
+  
   const [newMessage, setNewMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [typingUsers, setTypingUsers] = useState<string[]>([])
@@ -65,14 +72,26 @@ const RealtimeChat: React.FC<RealtimeChatProps> = ({
   useEffect(() => {
     if (!socket) return
 
-    const handleChatMessage = (messageData: ChatMessage) => {
+    const handleChatMessage = (messageData: any) => {
       console.log('💬 Received chat message:', messageData)
+      
+      // Map server response format to frontend ChatMessage format
+      const formattedMessage: ChatMessage = {
+        id: messageData._id || messageData.id || `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId: messageData.userId,
+        userName: messageData.userName,
+        message: messageData.message,
+        timestamp: messageData.timestamp || Date.now(),
+        type: messageData.messageType || messageData.type || 'text',
+        isTeacher: messageData.isTeacher || false,
+        replyTo: messageData.replyTo
+      }
       
       setMessages(prev => {
         // More robust duplicate checking - check by ID, timestamp, and content
         const isDuplicate = prev.some(msg => 
-          (msg.id === messageData.id) || 
-          (msg.timestamp === messageData.timestamp && msg.message === messageData.message && msg.userId === messageData.userId)
+          (msg.id === formattedMessage.id) || 
+          (msg.timestamp === formattedMessage.timestamp && msg.message === formattedMessage.message && msg.userId === formattedMessage.userId)
         )
         
         if (isDuplicate) {
@@ -80,11 +99,12 @@ const RealtimeChat: React.FC<RealtimeChatProps> = ({
           return prev
         }
         
-        return [...prev, messageData]
+        console.log('✅ Adding new chat message:', formattedMessage)
+        return [...prev, formattedMessage]
       })
 
       // Increment unread count if chat is not visible and not from current user
-      if (!isVisible && messageData.userId !== currentUserId) {
+      if (!isVisible && formattedMessage.userId !== currentUserId) {
         setUnreadCount(prev => prev + 1)
       }
 

@@ -96,6 +96,8 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
   const compressionBufferRef = useRef<CompressedDrawingData[]>([])
   const compressionTimerRef = useRef<NodeJS.Timeout | null>(null)
   const packetCountRef = useRef(0)
+  // Track last tool sent by teacher for decompressed stream
+  const lastToolRef = useRef<string>('pencil')
 
   const connect = useCallback((roomId: string, userId: string, userToken: string, isTeacherParam: boolean = false) => {
     console.log('� WhiteboardContext connecting with:', {
@@ -438,23 +440,47 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
         }
       }
     })
+    
+    // Handle element move for real-time synchronization
+    newSocket.on('element-moved', (data) => {
+      console.log('🔄 Element moved received:', data.elementId)
+      
+      // For students, update the moved element in real-time
+      if (!isTeacher && data.element) {
+        setDrawingElements(prev => 
+          prev.map(el => el.id === data.elementId ? data.element : el)
+        )
+      }
+    })
   }, [isTeacher]) // Only depends on isTeacher
 
   // Helper function to handle decompressed drawing data with INSTANT rendering
   const handleDecompressedDrawing = useCallback((data: CompressedDrawingData) => {
+    // Update last seen tool if present
+    if (data.tool) {
+      lastToolRef.current = data.tool
+    }
+    // Helper to map tool to element type
+    const mapToolToElementType = (tool?: string) => {
+      const t = (tool || lastToolRef.current)
+      if (t === 'highlighter') return 'highlight'
+      if (t === 'eraser') return 'eraser'
+      return 'freehand'
+    }
     switch (data.action) {
       case 'draw_start':
         // Start new drawing element - IMMEDIATE rendering
         if (data.elementId && data.x !== undefined && data.y !== undefined) {
           const newElement = {
             id: data.elementId,
-            type: data.tool === 'eraser' ? 'eraser' : 'freehand',
-            x: data.x,
-            y: data.y,
-            points: [{ x: data.x, y: data.y }],
-            stroke: data.color || '#000000',
-            strokeWidth: data.strokeWidth || 2,
-            fill: 'transparent',
+            type: mapToolToElementType(data.tool) as any,
+            points: [data.x, data.y],
+            options: {
+              stroke: data.color || '#000000',
+              strokeWidth: data.strokeWidth || 2,
+              roughness: 1,
+              fill: 'transparent'
+            },
             timestamp: data.timestamp || Date.now()
           } as unknown as DrawingElement
           setCurrentDrawingElement(newElement)
@@ -469,20 +495,22 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
               // Create new element if none exists (recovery for ultra-smooth drawing)
               return {
                 id: data.elementId || `recovery-${Date.now()}`,
-                type: 'freehand',
-                x: data.x,
-                y: data.y,
-                points: [{ x: data.x!, y: data.y! }],
-                stroke: data.color || '#000000',
-                strokeWidth: data.strokeWidth || 2,
-                fill: 'transparent',
+                type: mapToolToElementType(data.tool) as any,
+                points: [data.x!, data.y!],
+                options: {
+                  stroke: data.color || '#000000',
+                  strokeWidth: data.strokeWidth || 2,
+                  roughness: 1,
+                  fill: 'transparent'
+                },
                 timestamp: Date.now()
               } as unknown as DrawingElement
             }
             const p: any = prev
+            const prevPoints: number[] = Array.isArray(p.points) ? p.points : []
             return {
               ...p,
-              points: [...(p.points || []), { x: data.x!, y: data.y! }]
+              points: [...prevPoints, data.x!, data.y!]
             } as DrawingElement
           })
         }

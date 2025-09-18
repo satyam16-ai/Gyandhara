@@ -118,7 +118,7 @@ function TeacherWhiteboardContent() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 overflow-hidden">
+    <div className="h-[100dvh] bg-gray-50 overflow-hidden" style={{ minHeight: '100vh' }}>
       <WhiteboardProvider>
         <FullWhiteBoard
           isTeacher={true}

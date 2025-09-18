@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const BACKEND_URL = process.env.BACKEND_URL || 'https://gyandhara-backend.onrender.com'
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080'
 
 // POST /api/room-classes/[classId]/end - End a live class
 export async function POST(
@@ -23,10 +23,14 @@ export async function POST(
 
     console.log('Ending class:', classId, 'with body:', body)
 
+    // Forward the Authorization header from the client
+    const authHeader = request.headers.get('authorization')
+
     const response = await fetch(`${BACKEND_URL}/api/room-classes/${classId}/end`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader && { 'Authorization': authHeader })
       },
       body: JSON.stringify(body),
     })

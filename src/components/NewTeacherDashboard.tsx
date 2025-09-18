@@ -317,15 +317,20 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
 
   const handleJoinLiveLecture = async (lecture: Lecture) => {
     try {
+      const userToken = localStorage.getItem('userToken')
+      
+      if (!userToken) {
+        alert('❌ Authentication error. Please login again.')
+        return
+      }
+      
       // Call API to get current session data (to get the correct short roomId)
       const response = await fetch(`/api/room-classes/${lecture._id}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: localStorage.getItem('userId'), // Use userId instead of teacherId for join endpoint
-        })
+          'Authorization': `Bearer ${userToken}`
+        }
       })
 
       if (response.ok) {

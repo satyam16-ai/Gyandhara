@@ -13,7 +13,8 @@ export interface StrokeData {
 
 export interface DrawingElement {
   id: string
-  type: 'freehand' | 'rectangle' | 'circle' | 'triangle' | 'line' | 'arrow' | 'text' | 'highlight' | 'image'
+  type: 'freehand' | 'rectangle' | 'circle' | 'triangle' | 'line' | 'arrow' | 'text' | 'highlight' | 'image' | 
+        'filled-rectangle' | 'filled-circle' | 'filled-triangle' | 'diamond' | 'filled-diamond' | 'ellipse' | 'filled-ellipse'
   points: number[]
   options: {
     stroke: string
