@@ -902,8 +902,17 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
     if (!canvas) return
 
     const rect = canvas.getBoundingClientRect()
-    const x = (event.clientX - rect.left - panOffset.x) / zoom
-    const y = (event.clientY - rect.top - panOffset.y) / zoom
+    
+    let x: number, y: number
+    if (isTeacher) {
+      // Teacher: apply zoom and pan transformations for image positioning
+      x = (event.clientX - rect.left - panOffset.x) / zoom
+      y = (event.clientY - rect.top - panOffset.y) / zoom
+    } else {
+      // Student: use direct coordinate mapping
+      x = event.clientX - rect.left
+      y = event.clientY - rect.top
+    }
 
     const updatedImage = {
       ...selectedImage,
@@ -944,8 +953,18 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       
       ctx.save()
-      ctx.scale(zoom, zoom)
-      ctx.translate(panOffset.x, panOffset.y)
+      
+      // Apply consistent coordinate transform for both teacher and student
+      if (isTeacher) {
+        // Teacher: standard coordinate system
+        ctx.scale(zoom, zoom)
+        ctx.translate(panOffset.x, panOffset.y)
+      } else {
+        // Student: maintain 1:1 coordinate mapping with teacher's drawing space
+        // No additional scaling to prevent size/position mismatches
+        ctx.scale(1, 1)
+        ctx.translate(0, 0)
+      }
 
       // Draw elements - use refs to avoid re-render dependencies
       const elementsToRender = elementsRef.current || []
@@ -1004,7 +1023,7 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
 
       ctx.restore()
     }) // Close requestAnimationFrame callback
-  }, [zoom, panOffset, isTeacher]) // Minimal dependencies - only essential transforms
+  }, [zoom, panOffset, isTeacher]) // Include isTeacher for consistent rendering
 
   const drawGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     const gridSize = 20 * zoom
@@ -1567,9 +1586,18 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
     const clientY = 'touches' in e ? e.touches[0]?.clientY : 
                     'clientY' in e ? e.clientY : 0
     
-    return {
-      x: (clientX - rect.left) / zoom - panOffset.x,
-      y: (clientY - rect.top) / zoom - panOffset.y
+    if (isTeacher) {
+      // Teacher: apply zoom and pan transformations
+      return {
+        x: (clientX - rect.left) / zoom - panOffset.x,
+        y: (clientY - rect.top) / zoom - panOffset.y
+      }
+    } else {
+      // Student: use direct coordinate mapping to match teacher's drawing space
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      }
     }
   }
 

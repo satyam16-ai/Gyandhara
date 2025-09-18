@@ -1,5 +1,31 @@
 // Environment configuration
-require('dotenv').config()
+const path = require('path')
+const fs = require('fs')
+
+// Load appropriate .env file based on NODE_ENV
+const loadEnvFile = () => {
+  const NODE_ENV = process.env.NODE_ENV || 'development'
+  
+  // Priority of env files to check
+  const envFiles = [
+    `.env.${NODE_ENV}.local`, // .env.production.local, .env.development.local
+    `.env.${NODE_ENV}`,       // .env.production, .env.development
+    '.env.local',             // .env.local
+    '.env'                    // .env
+  ]
+  
+  for (const file of envFiles) {
+    const filePath = path.resolve(process.cwd(), file)
+    if (fs.existsSync(filePath)) {
+      require('dotenv').config({ path: filePath })
+      console.log(`🔧 Using environment config: ${file}`)
+      break
+    }
+  }
+}
+
+// Load environment variables
+loadEnvFile()
 
 const isProduction = process.env.NODE_ENV === 'production'
 
@@ -7,7 +33,7 @@ module.exports = {
   // MongoDB Configuration
   MONGODB_URI: process.env.MONGODB_URI || (isProduction 
     ? 'mongodb+srv://satyam_ai:satyamtiwari01@gyandhara.ordgmuf.mongodb.net/gyaandhara?retryWrites=true&w=majority&appName=GYANDHARA'
-    : 'mongodb://localhost:27017/voiceboard'
+    : 'mongodb://localhost:27017/gyaandhara'
   ),
   
   // Server Configuration

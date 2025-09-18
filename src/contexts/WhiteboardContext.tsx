@@ -339,18 +339,20 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
       
       if (data.action === 'add' && data.element) {
         setDrawingElements(prev => {
-          // Avoid duplicate elements by checking both id and timestamp
+          // Enhanced duplicate detection to prevent race conditions
           const isDuplicate = prev.some(el => 
             el.id === data.element.id || 
-            (Math.abs(el.timestamp - data.element.timestamp) < 100 && el.type === data.element.type)
+            (Math.abs(el.timestamp - data.element.timestamp) < 50 && 
+             el.type === data.element.type &&
+             JSON.stringify(el.points) === JSON.stringify(data.element.points))
           )
           
           if (isDuplicate) {
-            console.log('🚫 Skipping duplicate element:', data.element.id)
+            console.log('🚫 Skipping duplicate element (legacy):', data.element.id)
             return prev
           }
           
-          console.log('✅ Adding new drawing element for students:', data.element.type, data.element.id)
+          console.log('✅ Adding new drawing element (legacy):', data.element.type, data.element.id)
           return [...prev, data.element]
         })
       } else if (data.action === 'erase' && data.elementId) {
@@ -517,9 +519,25 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
         break
         
       case 'draw_end':
-        // Finalize drawing element - move to permanent storage
+        // Finalize drawing element - move to permanent storage WITH deduplication
         if (currentDrawingElement) {
-          setDrawingElements(prev => [...prev, currentDrawingElement])
+          setDrawingElements(prev => {
+            // Check for duplicates before adding - prevent double-add from legacy handler
+            const isDuplicate = prev.some(el => 
+              el.id === currentDrawingElement.id || 
+              (Math.abs(el.timestamp - currentDrawingElement.timestamp) < 50 && 
+               el.type === currentDrawingElement.type &&
+               JSON.stringify(el.points) === JSON.stringify(currentDrawingElement.points))
+            )
+            
+            if (isDuplicate) {
+              console.log('🚫 Skipping duplicate element (compressed):', currentDrawingElement.id)
+              return prev
+            }
+            
+            console.log('✅ Adding finalized drawing element (compressed):', currentDrawingElement.type, currentDrawingElement.id)
+            return [...prev, currentDrawingElement]
+          })
           setCurrentDrawingElement(null)
         }
         break

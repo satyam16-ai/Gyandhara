@@ -27,30 +27,35 @@ const classroomRoutes = require('./routes/classrooms')
 const app = express()
 const server = http.createServer(app)
 
-// Dynamic CORS configuration for production
-const allowedOrigins = config.IS_PRODUCTION 
-  ? [
-      config.FRONTEND_URL,
-      'https://gyandhara-tau.vercel.app',
-      'https://gyandhara-satyam.vercel.app',
-      'https://your-domain.com',
-      'https://www.your-domain.com',
-      'https://gyandhara-platform.herokuapp.com',
-      'https://gyandhara-platform.vercel.app',
-      'https://gyandhara-platform.netlify.app',
-      'https://gyandhara-n1arsqflk-nitin8360s-projects.vercel.app',
-      /\.vercel\.app$/
-    ]
-  : [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001',
-      'https://gyandhara-tau.vercel.app',
-      'https://gyandhara-satyam.vercel.app',
-      'https://gyandharasatyam.vercel.app'
-    ]
+// Enhanced CORS configuration for both local and production environments
+const defaultAllowedOrigins = [
+  // Production domains
+  'https://gyandhara-tau.vercel.app',
+  'https://gyandhara-satyam.vercel.app',
+  'https://your-domain.com',
+  'https://www.your-domain.com',
+  'https://gyandhara-platform.herokuapp.com',
+  'https://gyandhara-platform.vercel.app',
+  'https://gyandhara-platform.netlify.app',
+  'https://gyandhara-n1arsqflk-nitin8360s-projects.vercel.app',
+  /\.vercel\.app$/,
+  
+  // Development domains
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001',
+  'http://127.0.0.1:3002'
+]
+
+// Always include configured FRONTEND_URL if available
+const configuredOrigins = config.FRONTEND_URL ? 
+  [...defaultAllowedOrigins, config.FRONTEND_URL] : 
+  defaultAllowedOrigins
+
+// Set actual allowed origins based on environment
+const allowedOrigins = configuredOrigins
 
 const io = socketIo(server, {
   cors: {
@@ -84,33 +89,28 @@ app.use(cors({
     if (!origin) return callback(null, true)
     
     console.log(`🔍 CORS check for origin: ${origin}`)
-    console.log(`🔍 IS_PRODUCTION: ${config.IS_PRODUCTION}`)
     
-    // In development, allow all localhost origins
-    if (!config.IS_PRODUCTION) {
-      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-        console.log(`✅ CORS allowed (localhost): ${origin}`)
-        return callback(null, true)
-      }
-    }
-    
-    // Check against allowed origins
-    const isAllowed = allowedOrigins.includes(origin) || allowedOrigins.some(allowed => 
-      allowed instanceof RegExp ? allowed.test(origin) : allowed === origin
-    )
+    // Universal detection for allowed origins, regardless of environment
+    const isAllowed = allowedOrigins.includes(origin) || 
+                     allowedOrigins.some(allowed => 
+                       allowed instanceof RegExp ? allowed.test(origin) : allowed === origin
+                     ) || 
+                     origin.includes('localhost') || 
+                     origin.includes('127.0.0.1')
     
     if (isAllowed) {
-      console.log(`✅ CORS allowed (allowedOrigins): ${origin}`)
+      console.log(`✅ CORS allowed: ${origin}`)
       callback(null, true)
     } else {
       console.log(`❌ CORS blocked origin: ${origin}`)
+      console.log(`❌ Environment: ${process.env.NODE_ENV}`)
       console.log(`❌ AllowedOrigins:`, allowedOrigins)
       callback(new Error('Not allowed by CORS'))
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with', 'Accept', 'Origin', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with', 'Accept', 'Origin', 'X-Requested-With', 'x-auth-token']
 }))
 
 app.use(express.json({ limit: '50mb' }))

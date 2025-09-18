@@ -1,9 +1,17 @@
-// Utility function to get the backend URL
+// Enhanced utility function to get the backend URL with better environment handling
 export function getBackendUrl(): string {
-  // Prefer localhost in development; otherwise use envs with production fallback
+  // Detect environment
   const isDev = process.env.NODE_ENV !== 'production'
-  const defaultUrl = isDev ? 'http://localhost:10000' : 'https://gyandhara-backend.onrender.com'
-  // Priority order: NEXT_PUBLIC_BACKEND_URL (client-side) > BACKEND_URL (server-side) > default
+  
+  // Default URLs for different environments
+  const defaultLocalUrl = 'http://localhost:8080' // Match server PORT in .env.local
+  const defaultProdUrl = 'https://gyandhara-backend.onrender.com'
+  const defaultUrl = isDev ? defaultLocalUrl : defaultProdUrl
+  
+  // Priority order: 
+  // 1. NEXT_PUBLIC_BACKEND_URL (client-side)
+  // 2. BACKEND_URL (server-side)
+  // 3. Environment-specific default
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 
                     process.env.BACKEND_URL || 
                     defaultUrl
@@ -11,8 +19,8 @@ export function getBackendUrl(): string {
   // Remove trailing slash if present
   const cleanUrl = backendUrl.replace(/\/$/, '')
   
-  // Log the URL being used for debugging
-  console.log(`🔧 Backend URL: ${cleanUrl}`)
+  // Log the URL being used for debugging with environment context
+  console.log(`🔧 Backend URL: ${cleanUrl} (${isDev ? 'development' : 'production'})`)
   
   return cleanUrl
 }
