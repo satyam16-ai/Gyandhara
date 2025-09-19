@@ -541,19 +541,6 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
 
   return (
     <div className="flex items-center space-x-2">
-      {/* Enhanced audio element for students with better quality settings */}
-      {role === 'student' && (
-        <audio
-          ref={remoteAudioRef}
-          autoPlay
-          playsInline
-          volume={1.0}
-          style={{ display: 'none' }}
-          // Enhanced audio attributes for better quality
-          preload="auto"
-          controls={false}
-        />
-      )}
 
       {/* Error display */}
       {error && (
@@ -661,6 +648,27 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
         </>
       )}
       
+      {/* Enable Audio Button for autoplay restrictions */}
+      {role === 'student' && isConnected && !audioReceiving && (
+        <button
+          onClick={async () => {
+            if (remoteAudioRef.current) {
+              try {
+                await remoteAudioRef.current.play();
+                console.log('Audio manually enabled by user');
+              } catch (error) {
+                console.error('Failed to enable audio:', error);
+              }
+            }
+          }}
+          className="px-3 py-2 rounded-xl font-medium bg-orange-500/80 hover:bg-orange-600/80 text-white border border-orange-400/30 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
+          title="Click to enable audio playback"
+        >
+          <Volume2 className="w-4 h-4" />
+          <span className="text-sm">Enable Audio</span>
+        </button>
+      )}
+
       {/* Audio element for receiving teacher's audio */}
       {role === 'student' && (
         <audio 
@@ -670,6 +678,7 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
           controls={false}
           volume={1.0}
           muted={false}
+          preload="auto"
           style={{ 
             position: 'fixed',
             bottom: '10px',
@@ -677,8 +686,10 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
             width: '200px',
             height: '40px',
             zIndex: 1000,
-            opacity: isConnected ? 1 : 0,
-            pointerEvents: isConnected ? 'auto' : 'none'
+            opacity: isConnected ? 0.8 : 0,
+            pointerEvents: isConnected ? 'auto' : 'none',
+            backgroundColor: 'rgba(0, 0, 0, 0.1)',
+            borderRadius: '8px'
           }}
         />
       )}
