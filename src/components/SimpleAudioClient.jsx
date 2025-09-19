@@ -415,6 +415,12 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
         setTimeout(() => reject(new Error('Timeout creating consumer')), 5000);
       });
       
+      log(`Consumer data received: ${JSON.stringify({
+        id: consumerData.id,
+        kind: consumerData.kind,
+        producerId: consumerData.producerId
+      })}`);
+      
       consumerRef.current = await consumerTransportRef.current.consume({
         id: consumerData.id,
         producerId: consumerData.producerId,
@@ -422,80 +428,148 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
         rtpParameters: consumerData.rtpParameters
       });
       
+      // Debug consumer track
+      const track = consumerRef.current.track;
+      log(`Consumer track created - ID: ${track.id}, Kind: ${track.kind}, Enabled: ${track.enabled}, ReadyState: ${track.readyState}`);
+      
       // Get remote stream and ensure audio plays
-      const remoteStream = new MediaStream([consumerRef.current.track]);
+      const remoteStream = new MediaStream([track]);
+      log(`Remote stream created - ID: ${remoteStream.id}, Active: ${remoteStream.active}, Tracks: ${remoteStream.getTracks().length}`);
+      
+      // Log track state changes
+      track.addEventListener('ended', () => log('Track ended'));
+      track.addEventListener('mute', () => log('Track muted'));
+      track.addEventListener('unmute', () => log('Track unmuted'));
       
       if (remoteAudioRef.current) {
+        log('Setting up audio element...');
         remoteAudioRef.current.srcObject = remoteStream;
         remoteAudioRef.current.volume = 1.0;
         remoteAudioRef.current.muted = false;
         
-        // Add event listeners for debugging
+        // Enhanced event listeners for debugging
+        remoteAudioRef.current.onloadstart = () => log('Audio: Load start');
+        remoteAudioRef.current.onloadeddata = () => log('Audio: Data loaded');
         remoteAudioRef.current.onloadedmetadata = () => {
-          log('Remote audio metadata loaded');
+          log(`Audio metadata loaded - Duration: ${remoteAudioRef.current.duration}, Volume: ${remoteAudioRef.current.volume}`);
         };
         
         remoteAudioRef.current.oncanplay = () => {
-          log('Remote audio can play');
+          log('Audio can play - attempting to play');
+          setAudioReceiving(true);
+        };
+        
+        remoteAudioRef.current.onplaying = () => {
+          log('Audio is now playing!');
+          setAudioReceiving(true);
         };
         
         remoteAudioRef.current.onplay = () => {
-          log('Remote audio started playing');
+          log('Audio play event fired');
           setAudioReceiving(true);
         };
         
         remoteAudioRef.current.onpause = () => {
-          log('Remote audio paused');
+          log('Audio paused');
+          setAudioReceiving(false);
+        };
+        
+        remoteAudioRef.current.onended = () => {
+          log('Audio ended');
           setAudioReceiving(false);
         };
         
         remoteAudioRef.current.onerror = (e) => {
-          log(`Remote audio error: ${e.target.error?.message || 'Unknown error'}`, 'error');
+          const error = e.target.error;
+          log(`Audio error - Code: ${error?.code}, Message: ${error?.message}`, 'error');
         };
         
-        // Try to play the audio with user interaction fallback
+        remoteAudioRef.current.onstalled = () => log('Audio stalled', 'error');
+        remoteAudioRef.current.onsuspend = () => log('Audio suspended');
+        remoteAudioRef.current.onwaiting = () => log('Audio waiting for data');
+        
+        // Check browser audio context state
+        if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+          const AudioCtx = AudioContext || webkitAudioContext;
+          const audioContext = new AudioCtx();
+          log(`Audio context state: ${audioContext.state}`);
+          
+          if (audioContext.state === 'suspended') {
+            log('Audio context suspended - attempting to resume');
+            audioContext.resume().then(() => {
+              log('Audio context resumed successfully');
+            }).catch(err => {
+              log(`Failed to resume audio context: ${err.message}`, 'error');
+            });
+          }
+        }
+        
+        // Try to play the audio with enhanced error handling
         try {
+          log('Attempting to play audio...');
           const playPromise = remoteAudioRef.current.play();
+          
           if (playPromise !== undefined) {
             playPromise.then(() => {
-              log('Remote audio playing successfully');
+              log('✅ Audio playing successfully!');
+              setAudioReceiving(true);
             }).catch(playError => {
-              log(`Audio play failed (user interaction required): ${playError.message}`);
+              log(`❌ Audio play failed: ${playError.name} - ${playError.message}`);
               
-              // Add click handler to enable audio
+              // Check if it's an autoplay restriction
+              if (playError.name === 'NotAllowedError') {
+                log('Autoplay blocked - need user interaction');
+                setError('Click "Enable Audio" to hear the teacher');
+              }
+              
+              // Add global click handler to enable audio
               const enableAudio = async () => {
                 try {
+                  log('User interaction detected - enabling audio');
                   await remoteAudioRef.current.play();
-                  log('Audio enabled after user interaction');
+                  log('✅ Audio enabled successfully after user interaction');
+                  setError(null);
                   document.removeEventListener('click', enableAudio);
                   document.removeEventListener('touchstart', enableAudio);
                 } catch (retryError) {
-                  log(`Still failed to play after interaction: ${retryError.message}`, 'error');
+                  log(`❌ Still failed to play after interaction: ${retryError.message}`, 'error');
+                  setError(`Audio error: ${retryError.message}`);
                 }
               };
               
               document.addEventListener('click', enableAudio, { once: true });
               document.addEventListener('touchstart', enableAudio, { once: true });
-              
-              // Show message to user
-              setError('Click anywhere to enable audio');
-              setTimeout(() => setError(null), 5000);
             });
           }
         } catch (immediateError) {
-          log(`Immediate audio play error: ${immediateError.message}`, 'error');
+          log(`❌ Immediate play error: ${immediateError.message}`, 'error');
         }
+        
+        // Log current audio element state
+        setTimeout(() => {
+          log(`Audio element state check:
+            - Source: ${remoteAudioRef.current.srcObject ? 'Set' : 'Not set'}
+            - Volume: ${remoteAudioRef.current.volume}
+            - Muted: ${remoteAudioRef.current.muted}
+            - Paused: ${remoteAudioRef.current.paused}
+            - Ready State: ${remoteAudioRef.current.readyState}
+            - Current Time: ${remoteAudioRef.current.currentTime}
+            - Duration: ${remoteAudioRef.current.duration}
+          `);
+        }, 1000);
+        
       } else {
-        log('No audio element found!', 'error');
+        log('❌ No audio element found!', 'error');
       }
       
       // Resume consumer
       socketRef.current.emit('resume-consumer', { consumerId: consumerRef.current.id });
       
-      log('Audio consumption started successfully');
+      log('✅ Audio consumption setup completed');
       
     } catch (error) {
-      log(`Error consuming audio: ${error.message}`, 'error');
+      log(`❌ Error consuming audio: ${error.message}`, 'error');
+      setError(`Audio setup failed: ${error.message}`);
     }
   }, []);
 
@@ -649,23 +723,48 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
       )}
       
       {/* Enable Audio Button for autoplay restrictions */}
-      {role === 'student' && isConnected && !audioReceiving && (
+      {role === 'student' && isConnected && (
         <button
           onClick={async () => {
             if (remoteAudioRef.current) {
               try {
+                console.log('🔊 User clicked Enable Audio button');
+                
+                // Check if audio context needs to be resumed
+                if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+                  const AudioCtx = AudioContext || webkitAudioContext;
+                  const audioContext = new AudioCtx();
+                  if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                    console.log('Audio context resumed by user action');
+                  }
+                }
+                
+                // Force play the audio
                 await remoteAudioRef.current.play();
-                console.log('Audio manually enabled by user');
+                console.log('✅ Audio manually enabled by user');
+                setError(null);
+                setAudioReceiving(true);
               } catch (error) {
-                console.error('Failed to enable audio:', error);
+                console.error('❌ Failed to enable audio:', error);
+                setError(`Audio enable failed: ${error.message}`);
               }
             }
           }}
-          className="px-3 py-2 rounded-xl font-medium bg-orange-500/80 hover:bg-orange-600/80 text-white border border-orange-400/30 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
-          title="Click to enable audio playback"
+          className={`px-4 py-3 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-3 backdrop-blur-md shadow-xl hover:shadow-2xl ${
+            audioReceiving 
+              ? 'bg-green-500/90 hover:bg-green-600/90 text-white border border-green-400/50 animate-pulse' 
+              : 'bg-orange-500/90 hover:bg-orange-600/90 text-white border border-orange-400/50 animate-bounce'
+          }`}
+          title={audioReceiving ? 'Audio is playing' : 'Click to enable audio playback'}
         >
-          <Volume2 className="w-4 h-4" />
-          <span className="text-sm">Enable Audio</span>
+          <Volume2 className="w-6 h-6" />
+          <span>
+            {audioReceiving ? '🔊 Audio Playing' : '🔊 Enable Audio'}
+          </span>
+          {!audioReceiving && (
+            <div className="w-3 h-3 bg-white rounded-full animate-ping" />
+          )}
         </button>
       )}
 
@@ -675,7 +774,7 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
           ref={remoteAudioRef} 
           autoPlay 
           playsInline
-          controls={false}
+          controls={true}  // Enable controls for debugging
           volume={1.0}
           muted={false}
           preload="auto"
@@ -683,14 +782,21 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
             position: 'fixed',
             bottom: '10px',
             right: '10px',
-            width: '200px',
-            height: '40px',
+            width: '300px',  // Wider for controls
+            height: '60px',   // Taller for controls
             zIndex: 1000,
-            opacity: isConnected ? 0.8 : 0,
+            opacity: isConnected ? 1 : 0,  // Fully visible when connected
             pointerEvents: isConnected ? 'auto' : 'none',
-            backgroundColor: 'rgba(0, 0, 0, 0.1)',
-            borderRadius: '8px'
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            borderRadius: '8px',
+            border: '2px solid #4ade80'  // Green border for visibility
           }}
+          onLoadedData={() => console.log('Audio data loaded')}
+          onCanPlay={() => console.log('Audio can play')}
+          onPlay={() => console.log('Audio started playing')}
+          onPause={() => console.log('Audio paused')}
+          onVolumeChange={() => console.log('Volume changed:', remoteAudioRef.current?.volume)}
+          onTimeUpdate={() => console.log('Audio time update')}
         />
       )}
     </div>
