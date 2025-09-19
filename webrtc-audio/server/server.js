@@ -12,13 +12,31 @@ const SignalingHandler = require('./signaling');
 // Environment configuration
 const isDev = process.env.NODE_ENV !== 'production';
 const PORT = process.env.PORT || 3001;
+const LOG_LEVEL = process.env.LOG_LEVEL || (isDev ? 'debug' : 'info');
+const SERVER_NAME = process.env.SERVER_NAME || 'gyandhara-audio-sfu';
 
 // Render native deployment detection
-const isRender = !!process.env.RENDER;
+const isRender = !!process.env.RENDER || process.env.DEPLOYMENT_PLATFORM === 'render';
+
+// mediasoup configuration from environment
+const MEDIASOUP_CONFIG = {
+  minPort: parseInt(process.env.MEDIASOUP_MIN_PORT) || 20000,
+  maxPort: parseInt(process.env.MEDIASOUP_MAX_PORT) || 20100,
+  announcedIp: process.env.MEDIASOUP_ANNOUNCED_IP || 'auto'
+};
+
+// CORS configuration from environment
+const corsEnabled = process.env.ENABLE_CORS !== 'false';
+const allowedOriginsEnv = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : [];
 
 // Production CORS origins
 const allowedOrigins = [
-  // Production domains
+  // Environment-specific origins
+  ...allowedOriginsEnv,
+  
+  // Default production domains
   'https://gyandhara-tau.vercel.app',
   'https://gyandhara-satyam.vercel.app',
   'https://your-domain.com',
@@ -43,7 +61,7 @@ const allowedOrigins = [
 
 // Configure logger for production and Render
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || (isDev ? 'debug' : 'info'),
+  level: LOG_LEVEL,
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.errors({ stack: true }),
@@ -51,6 +69,7 @@ const logger = winston.createLogger({
       ? winston.format.json() 
       : (isDev ? winston.format.simple() : winston.format.json())
   ),
+  defaultMeta: { service: SERVER_NAME },
   transports: [
     new winston.transports.Console({
       format: isRender 

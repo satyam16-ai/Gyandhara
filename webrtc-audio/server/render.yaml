@@ -8,14 +8,45 @@ services:
     startCommand: npm start
     healthCheckPath: /health
     envVars:
+      # Core Node.js Configuration
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
       - key: NODE_VERSION
         value: 20.11.0
+      
+      # Build Configuration
       - key: NPM_CONFIG_PRODUCTION
         value: false
+      - key: NPM_CONFIG_CACHE
+        value: /tmp/.npm
+      
+      # Application Configuration
+      - key: LOG_LEVEL
+        value: info
+      - key: SERVER_NAME
+        value: gyandhara-audio-sfu
+      
+      # mediasoup Configuration
+      - key: MEDIASOUP_MIN_PORT
+        value: 20000
+      - key: MEDIASOUP_MAX_PORT
+        value: 20100
+      - key: MEDIASOUP_ANNOUNCED_IP
+        value: auto
+      
+      # CORS and Security
+      - key: ALLOWED_ORIGINS
+        value: https://gyandhara-app.onrender.com,http://localhost:3000,http://localhost:5173
+      - key: ENABLE_CORS
+        value: true
+      
+      # Health Check Configuration
+      - key: HEALTH_CHECK_ENABLED
+        value: true
+      - key: HEALTH_CHECK_INTERVAL
+        value: 30000
     autoDeploy: false
     rootDir: webrtc-audio/server
     
@@ -42,3 +73,5 @@ services:
     environment:
       NODE_ENV: production
       LOG_LEVEL: info
+      SERVER_TYPE: audio-sfu
+      DEPLOYMENT_PLATFORM: render
