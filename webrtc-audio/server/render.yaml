@@ -38,7 +38,7 @@ services:
       
       # CORS and Security
       - key: ALLOWED_ORIGINS
-        value: https://gyandhara-app.onrender.com,http://localhost:3000,http://localhost:5173
+        value: https://gyandhara-tau.vercel.app,https://gyandhara-app.onrender.com,http://localhost:3000,http://localhost:5173
       - key: ENABLE_CORS
         value: true
       
