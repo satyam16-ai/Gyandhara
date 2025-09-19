@@ -13,6 +13,9 @@ const SignalingHandler = require('./signaling');
 const isDev = process.env.NODE_ENV !== 'production';
 const PORT = process.env.PORT || 3001;
 
+// Render native deployment detection
+const isRender = !!process.env.RENDER;
+
 // Production CORS origins
 const allowedOrigins = [
   // Production domains
@@ -38,19 +41,23 @@ const allowedOrigins = [
   ] : [])
 ];
 
-// Configure logger for production
+// Configure logger for production and Render
 const logger = winston.createLogger({
-  level: isDev ? 'debug' : 'info',
+  level: process.env.LOG_LEVEL || (isDev ? 'debug' : 'info'),
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.errors({ stack: true }),
-    isDev ? winston.format.simple() : winston.format.json()
+    isRender 
+      ? winston.format.json() 
+      : (isDev ? winston.format.simple() : winston.format.json())
   ),
   transports: [
     new winston.transports.Console({
-      format: isDev ? winston.format.simple() : winston.format.json()
+      format: isRender 
+        ? winston.format.json() 
+        : (isDev ? winston.format.simple() : winston.format.json())
     }),
-    ...(isDev ? [new winston.transports.File({ filename: 'audio-sfu.log' })] : [])
+    ...(isDev && !isRender ? [new winston.transports.File({ filename: 'audio-sfu.log' })] : [])
   ]
 });
 
@@ -260,9 +267,11 @@ class AudioSFUServer {
       this.server.listen(port, '0.0.0.0', () => {
         logger.info(`🎵 Audio SFU Server running on port ${port}`);
         logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-        logger.info(`📊 Health check: ${isDev ? 'http://localhost:' + port : 'https://your-domain.com'}/health`);
+        logger.info(`� Deployment: ${isRender ? 'Render Native Node.js' : (isDev ? 'Local Development' : 'Production')}`);
+        logger.info(`�📊 Health check: ${isDev ? 'http://localhost:' + port : 'https://your-domain.com'}/health`);
         logger.info(`🔧 Workers initialized: ${this.sfuManager.getWorkerCount()}`);
         logger.info(`🔒 CORS origins: ${allowedOrigins.length} configured`);
+        logger.info(`📦 Node.js version: ${process.version}`);
         
         if (isDev) {
           logger.info(`🛠️  API info: http://localhost:${port}/api/info`);

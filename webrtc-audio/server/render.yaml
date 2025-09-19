@@ -14,20 +14,19 @@ services:
         value: 10000
       - key: NODE_VERSION
         value: 20.11.0
+      - key: NPM_CONFIG_PRODUCTION
+        value: false
     autoDeploy: false
     rootDir: webrtc-audio/server
     
     # Scaling configuration
     numInstances: 1
     
-    # Resource allocation
-    disk:
-      name: gyandhara-audio-sfu-disk
-      size: 10GB
-      
-    # Network configuration
-    previewsEnabled: false
-    
+    # Build settings - Native Node.js deployment
+    buildFilter:
+      paths:
+        - webrtc-audio/server/**
+        
     # Health check configuration
     healthCheck:
       enabled: true
@@ -39,11 +38,6 @@ services:
     # Auto-deploy settings
     branch: main
     
-    # Build settings
-    buildFilter:
-      paths:
-        - webrtc-audio/server/**
-        
     # Environment-specific configuration
     environment:
       NODE_ENV: production
