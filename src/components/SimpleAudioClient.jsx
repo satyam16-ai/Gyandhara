@@ -443,15 +443,30 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
       
       if (remoteAudioRef.current) {
         log('Setting up audio element...');
+        
+        // For live streams, we need to handle the audio differently
         remoteAudioRef.current.srcObject = remoteStream;
         remoteAudioRef.current.volume = 1.0;
         remoteAudioRef.current.muted = false;
         
+        // Set properties for live streaming
+        remoteAudioRef.current.autoplay = true;
+        remoteAudioRef.current.playsInline = true;
+        remoteAudioRef.current.defaultMuted = false;
+        
         // Enhanced event listeners for debugging
         remoteAudioRef.current.onloadstart = () => log('Audio: Load start');
-        remoteAudioRef.current.onloadeddata = () => log('Audio: Data loaded');
+        remoteAudioRef.current.onloadeddata = () => {
+          log('Audio: Data loaded');
+          // For live streams, duration will be Infinity or 0
+          log(`Audio duration: ${remoteAudioRef.current.duration} (Live stream)`);
+        };
         remoteAudioRef.current.onloadedmetadata = () => {
-          log(`Audio metadata loaded - Duration: ${remoteAudioRef.current.duration}, Volume: ${remoteAudioRef.current.volume}`);
+          log(`Audio metadata loaded - Duration: ${remoteAudioRef.current.duration || 'Live'}, Volume: ${remoteAudioRef.current.volume}`);
+          // Live streams have infinite or undefined duration
+          if (remoteAudioRef.current.duration === Infinity || isNaN(remoteAudioRef.current.duration)) {
+            log('Confirmed: This is a live audio stream');
+          }
         };
         
         remoteAudioRef.current.oncanplay = () => {
@@ -460,7 +475,7 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
         };
         
         remoteAudioRef.current.onplaying = () => {
-          log('Audio is now playing!');
+          log('✅ Audio is now playing!');
           setAudioReceiving(true);
         };
         
@@ -488,7 +503,15 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
         remoteAudioRef.current.onsuspend = () => log('Audio suspended');
         remoteAudioRef.current.onwaiting = () => log('Audio waiting for data');
         
-        // Check browser audio context state
+        // Add time update listener to show live stream status
+        remoteAudioRef.current.ontimeupdate = () => {
+          if (remoteAudioRef.current && !remoteAudioRef.current.paused) {
+            // For live streams, we'll show that it's playing
+            log(`Live audio time: ${remoteAudioRef.current.currentTime.toFixed(1)}s`);
+          }
+        };
+        
+        // Check browser audio context state and create Web Audio API connection
         if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
           const AudioCtx = AudioContext || webkitAudioContext;
           const audioContext = new AudioCtx();
@@ -502,9 +525,29 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
               log(`Failed to resume audio context: ${err.message}`, 'error');
             });
           }
+          
+          // Create Web Audio API nodes for better control
+          try {
+            const source = audioContext.createMediaStreamSource(remoteStream);
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = 1.0; // Full volume
+            
+            source.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            log('✅ Web Audio API nodes created and connected');
+            
+            // Store references for later use
+            remoteAudioRef.current.audioContext = audioContext;
+            remoteAudioRef.current.audioSource = source;
+            remoteAudioRef.current.gainNode = gainNode;
+            
+          } catch (webAudioError) {
+            log(`Web Audio API setup failed: ${webAudioError.message}`, 'error');
+          }
         }
         
-        // Try to play the audio with enhanced error handling
+        // Try to play the audio with enhanced error handling and multiple fallbacks
         try {
           log('Attempting to play audio...');
           const playPromise = remoteAudioRef.current.play();
@@ -513,22 +556,51 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
             playPromise.then(() => {
               log('✅ Audio playing successfully!');
               setAudioReceiving(true);
-            }).catch(playError => {
+            }).catch(async (playError) => {
               log(`❌ Audio play failed: ${playError.name} - ${playError.message}`);
               
               // Check if it's an autoplay restriction
               if (playError.name === 'NotAllowedError') {
-                log('Autoplay blocked - need user interaction');
-                setError('Click "Enable Audio" to hear the teacher');
+                log('Autoplay blocked - trying Web Audio API fallback');
+                
+                // Try Web Audio API as fallback
+                if (remoteAudioRef.current.audioContext && remoteAudioRef.current.audioSource) {
+                  try {
+                    await remoteAudioRef.current.audioContext.resume();
+                    log('✅ Web Audio API fallback working');
+                    setAudioReceiving(true);
+                    setError(null);
+                  } catch (webAudioError) {
+                    log(`Web Audio API fallback failed: ${webAudioError.message}`, 'error');
+                    setError('Click "Enable Audio" to hear the teacher');
+                  }
+                } else {
+                  setError('Click "Enable Audio" to hear the teacher');
+                }
               }
               
               // Add global click handler to enable audio
               const enableAudio = async () => {
                 try {
                   log('User interaction detected - enabling audio');
-                  await remoteAudioRef.current.play();
+                  
+                  // Try both HTML5 audio and Web Audio API
+                  const audioPromises = [];
+                  
+                  // HTML5 Audio
+                  if (remoteAudioRef.current && !remoteAudioRef.current.paused) {
+                    audioPromises.push(remoteAudioRef.current.play());
+                  }
+                  
+                  // Web Audio API
+                  if (remoteAudioRef.current.audioContext) {
+                    audioPromises.push(remoteAudioRef.current.audioContext.resume());
+                  }
+                  
+                  await Promise.all(audioPromises);
                   log('✅ Audio enabled successfully after user interaction');
                   setError(null);
+                  setAudioReceiving(true);
                   document.removeEventListener('click', enableAudio);
                   document.removeEventListener('touchstart', enableAudio);
                 } catch (retryError) {
@@ -733,14 +805,39 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
                 // Check if audio context needs to be resumed
                 if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
                   const AudioCtx = AudioContext || webkitAudioContext;
-                  const audioContext = new AudioCtx();
+                  let audioContext = remoteAudioRef.current.audioContext;
+                  
+                  if (!audioContext) {
+                    audioContext = new AudioCtx();
+                    remoteAudioRef.current.audioContext = audioContext;
+                  }
+                  
                   if (audioContext.state === 'suspended') {
                     await audioContext.resume();
                     console.log('Audio context resumed by user action');
                   }
+                  
+                  // If Web Audio API nodes aren't set up, create them
+                  if (!remoteAudioRef.current.audioSource && remoteAudioRef.current.srcObject) {
+                    try {
+                      const source = audioContext.createMediaStreamSource(remoteAudioRef.current.srcObject);
+                      const gainNode = audioContext.createGain();
+                      gainNode.gain.value = 1.0;
+                      
+                      source.connect(gainNode);
+                      gainNode.connect(audioContext.destination);
+                      
+                      remoteAudioRef.current.audioSource = source;
+                      remoteAudioRef.current.gainNode = gainNode;
+                      
+                      console.log('✅ Web Audio API nodes created on user interaction');
+                    } catch (webAudioError) {
+                      console.error('Web Audio API setup failed:', webAudioError);
+                    }
+                  }
                 }
                 
-                // Force play the audio
+                // Force play the audio element
                 await remoteAudioRef.current.play();
                 console.log('✅ Audio manually enabled by user');
                 setError(null);
@@ -753,7 +850,7 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
           }}
           className={`px-4 py-3 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-3 backdrop-blur-md shadow-xl hover:shadow-2xl ${
             audioReceiving 
-              ? 'bg-green-500/90 hover:bg-green-600/90 text-white border border-green-400/50 animate-pulse' 
+              ? 'bg-green-500/90 hover:bg-green-600/90 text-white border border-green-400/50' 
               : 'bg-orange-500/90 hover:bg-orange-600/90 text-white border border-orange-400/50 animate-bounce'
           }`}
           title={audioReceiving ? 'Audio is playing' : 'Click to enable audio playback'}

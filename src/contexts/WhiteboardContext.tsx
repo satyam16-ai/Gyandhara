@@ -364,26 +364,32 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
       }
     })
 
-    // Compressed drawing data receiver
+        // Compressed drawing data receiver with stats tracking
     newSocket.on('compressed-drawing-data', (compressedBuffer: ArrayBuffer) => {
       try {
         const uint8Array = new Uint8Array(compressedBuffer)
         const decompressedData = decompressDrawingData(uint8Array)
         
         console.log('📦 Decompressed drawing data:', decompressedData.action, 
-          `${compressedBuffer.byteLength} bytes`)
-        
-        // Update compression stats
-        const originalSize = JSON.stringify(decompressedData).length
-        setCompressionStats(prev => ({
-          originalSize: prev.originalSize + originalSize,
-          compressedSize: prev.compressedSize + compressedBuffer.byteLength,
-          compressionRatio: prev.compressedSize > 0 ? 
-            (prev.originalSize / prev.compressedSize) : 0,
-          packetsPerSecond: prev.packetsPerSecond
-        }))
-        
-        // Process decompressed data
+          `Original: ${JSON.stringify(decompressedData).length}B`,
+          `Compressed: ${uint8Array.length}B`,
+          `Ratio: ${(JSON.stringify(decompressedData).length / uint8Array.length).toFixed(1)}x`)
+
+        // Update compression stats for students receiving data
+        if (!isTeacher) {
+          const originalSize = JSON.stringify(decompressedData).length
+          const compressedSize = uint8Array.length
+          
+          setCompressionStats(prev => ({
+            originalSize: prev.originalSize + originalSize,
+            compressedSize: prev.compressedSize + compressedSize,
+            compressionRatio: compressedSize > 0 ? 
+              (prev.originalSize + originalSize) / (prev.compressedSize + compressedSize) : 0,
+            packetsPerSecond: prev.packetsPerSecond + 1
+          }))
+        }
+
+        // Handle decompressed data
         handleDecompressedDrawing(decompressedData)
         
       } catch (error) {
@@ -601,19 +607,30 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
     packetCountRef.current = 0
   }, [socket, isConnected, isTeacher])
 
-  // Setup ultra-fast compression timer (16ms = 60fps)
+  // Setup ultra-fast compression timer (16ms = 60fps) with improved stats tracking
   useEffect(() => {
-    if (isTeacher && isConnected) {
-      compressionTimerRef.current = setInterval(() => {
-        flushCompressionBuffer()
-        
-        // Update packets per second
-        setCompressionStats(prev => ({
-          ...prev,
-          packetsPerSecond: packetCountRef.current * (1000 / NETWORK_CONFIG.batchInterval)
-        }))
-        packetCountRef.current = 0
+    if (isConnected) {
+      // Set up stats tracking for both teacher and students
+      const statsInterval = setInterval(() => {
+        if (isTeacher) {
+          flushCompressionBuffer()
+          
+          // Update packets per second for teacher
+          setCompressionStats(prev => ({
+            ...prev,
+            packetsPerSecond: packetCountRef.current * (1000 / NETWORK_CONFIG.batchInterval)
+          }))
+          packetCountRef.current = 0
+        } else {
+          // For students, update packets received per second
+          setCompressionStats(prev => ({
+            ...prev,
+            packetsPerSecond: Math.max(0, prev.packetsPerSecond * 0.9) // Decay the value gradually
+          }))
+        }
       }, NETWORK_CONFIG.batchInterval)
+      
+      compressionTimerRef.current = statsInterval
     } else {
       if (compressionTimerRef.current) {
         clearInterval(compressionTimerRef.current)
