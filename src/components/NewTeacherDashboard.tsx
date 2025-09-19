@@ -130,7 +130,8 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
     try {
       setRefreshing(true)
       
-      const response = await fetch(`/api/classrooms/teacher/${user.id}`)
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/classrooms/teacher/${user.id}`)
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
@@ -149,7 +150,8 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
     e.preventDefault()
     
     try {
-      const response = await fetch('/api/classrooms/create', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/classrooms/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -187,7 +189,8 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
     if (!selectedClassroom) return
     
     try {
-      const response = await fetch(`/api/classrooms/${selectedClassroom._id}/lectures`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/classrooms/${selectedClassroom._id}/lectures`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -221,7 +224,8 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
 
   const fetchClassroomDetails = async (classroomId: string) => {
     try {
-      const response = await fetch(`/api/classrooms/${classroomId}/details`)
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/classrooms/${classroomId}/details`)
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
@@ -241,7 +245,8 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
 
   const handleStartLecture = async (lecture: Lecture) => {
     try {
-      const response = await fetch(`/api/room-classes/${lecture._id}/start`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/room-classes/${lecture._id}/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -325,7 +330,8 @@ export default function NewTeacherDashboard({ user }: NewTeacherDashboardProps) 
       }
       
       // Call API to get current session data (to get the correct short roomId)
-      const response = await fetch(`/api/room-classes/${lecture._id}/join`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/room-classes/${lecture._id}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

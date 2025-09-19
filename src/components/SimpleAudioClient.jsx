@@ -43,7 +43,8 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
       log(`Joining room ${roomId} as ${role}...`);
 
       // Connect to server
-      socketRef.current = io('http://localhost:3001');
+      const serverUrl = process.env.NEXT_PUBLIC_WEBRTC_SERVER_URL || 'http://localhost:3001';
+      socketRef.current = io(serverUrl);
       
       setupSocketListeners();
       

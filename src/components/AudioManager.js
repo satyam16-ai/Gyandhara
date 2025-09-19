@@ -8,7 +8,7 @@ import io from 'socket.io-client';
 
 class AudioManager {
   constructor(options = {}) {
-    this.serverUrl = options.serverUrl || 'http://localhost:3001';
+    this.serverUrl = options.serverUrl || process.env.NEXT_PUBLIC_WEBRTC_SERVER_URL || 'http://localhost:3001';
     this.onStateChange = options.onStateChange || (() => {});
     this.onError = options.onError || (() => {});
     this.onLog = options.onLog || (() => {});

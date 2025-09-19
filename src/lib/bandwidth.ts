@@ -58,7 +58,8 @@ export class BandwidthManager {
       // Simple network speed test using a small image
       const startTime = performance.now()
       
-      const response = await fetch('/api/health', { 
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/health`, { 
         method: 'GET',
         cache: 'no-cache'
       })

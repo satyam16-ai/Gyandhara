@@ -2232,7 +2232,8 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
         }
         
         console.log('🛑 Ending class with ID:', currentClassId)
-        const response = await fetch(`/api/room-classes/${currentClassId}/end`, {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+        const response = await fetch(`${backendUrl}/api/room-classes/${currentClassId}/end`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

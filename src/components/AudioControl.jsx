@@ -16,7 +16,7 @@ const AudioControl = ({
   role = 'student', 
   roomId, 
   onStateChange,
-  serverUrl = 'http://localhost:3001',
+  serverUrl = process.env.NEXT_PUBLIC_WEBRTC_SERVER_URL || 'http://localhost:3001',
   className = ''
 }) => {
   const [audioState, setAudioState] = useState({

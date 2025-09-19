@@ -108,7 +108,8 @@ export default function AIDoubtSolver({
         context: 'educational_whiteboard_doubt'
       }
 
-      const response = await fetch('/api/ai/doubt-solver', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/ai/doubt-solver`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

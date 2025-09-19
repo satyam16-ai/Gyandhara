@@ -138,7 +138,8 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
 
   const fetchEnrolledClassrooms = async () => {
     try {
-      const response = await fetch(`/api/classrooms/student/${user.id}`)
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/classrooms/student/${user.id}`)
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
@@ -153,14 +154,15 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
   const fetchAllLectures = async () => {
     try {
       // For now, we'll fetch lectures from all enrolled classrooms
-      const response = await fetch(`/api/classrooms/student/${user.id}`)
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/classrooms/student/${user.id}`)
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.classrooms) {
           // Fetch lectures for each classroom
           const lecturePromises = data.classrooms.map(async (classroom: Classroom) => {
             try {
-              const lectureResponse = await fetch(`/api/classrooms/${classroom._id}/lectures`)
+              const lectureResponse = await fetch(`${backendUrl}/api/classrooms/${classroom._id}/lectures`)
               if (lectureResponse.ok) {
                 const lectureData = await lectureResponse.json()
                 return lectureData.success ? lectureData.lectures || [] : []
@@ -196,7 +198,8 @@ export default function NewStudentDashboard({ user }: NewStudentDashboardProps) 
     }
     
     try {
-      const response = await fetch('/api/classrooms/join', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/classrooms/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

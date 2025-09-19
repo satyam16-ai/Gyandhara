@@ -38,7 +38,7 @@ This document explains all environment variables used by the Gyandhara Audio SFU
 
 #### Default ALLOWED_ORIGINS:
 ```
-https://gyandhara-app.onrender.com,http://localhost:3000,http://localhost:5173
+https://gyandhara-tau.vercel.app,https://gyandhara-backend.onrender.com,https://webrtc-server-sih.onrender.com,http://localhost:3000,http://localhost:5173
 ```
 
 ### 🏥 Health Check Configuration

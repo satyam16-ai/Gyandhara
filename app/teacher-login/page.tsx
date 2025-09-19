@@ -49,7 +49,9 @@ export default function TeacherLoginPage() {
     setError('')
 
     try {
-      const response = await fetch('/api/auth/login', {
+      // Use the backend URL from environment variables
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://gyandhara-backend.onrender.com'
+      const response = await fetch(`${backendUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
