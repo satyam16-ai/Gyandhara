@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: gyandhara-audio-sfu
+    env: node
+    plan: starter
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    autoDeploy: false
+    rootDir: webrtc-audio/server
+    
+    # Scaling configuration
+    numInstances: 1
+    
+    # Resource allocation
+    disk:
+      name: gyandhara-audio-sfu-disk
+      size: 10GB
+      
+    # Network configuration
+    previewsEnabled: false
+    
+    # Health check configuration
+    healthCheck:
+      enabled: true
+      path: /health
+      timeout: 30
+      interval: 30
+      retries: 3
+      
+    # Auto-deploy settings
+    branch: main
+    
+    # Build settings
+    buildFilter:
+      paths:
+        - webrtc-audio/server/**
+        
+    # Environment-specific configuration
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: info

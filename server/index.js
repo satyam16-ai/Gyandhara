@@ -1033,6 +1033,50 @@ io.on('connection', (socket) => {
     }
   })
   
+  // Handle PDF sharing by teachers
+  socket.on('teacher-upload-pdf', async (data) => {
+    try {
+      console.log('Teacher uploading PDF:', data.fileName, 'in room:', data.roomId)
+      
+      // Verify that the sender is a teacher
+      if (socket.role !== 'teacher') {
+        console.log('Non-teacher tried to upload PDF:', socket.userId)
+        socket.emit('pdf-upload-error', { message: 'Only teachers can upload PDFs' })
+        return
+      }
+
+      // Validate the PDF data
+      if (!data.fileData || !data.fileName || !data.roomId) {
+        socket.emit('pdf-upload-error', { message: 'Invalid PDF data' })
+        return
+      }
+
+      // Broadcast PDF to all students in the room
+      socket.to(data.roomId).emit('student-receive-pdf', {
+        fileName: data.fileName,
+        fileData: data.fileData,
+        timestamp: data.timestamp || new Date().toISOString(),
+        teacherId: socket.userId,
+        teacherName: socket.userName
+      })
+
+      // Confirm upload to teacher
+      socket.emit('pdf-upload-success', {
+        fileName: data.fileName,
+        timestamp: data.timestamp
+      })
+
+      console.log(`PDF "${data.fileName}" shared with students in room ${data.roomId}`)
+      
+    } catch (error) {
+      console.error('Error handling PDF upload:', error)
+      socket.emit('pdf-upload-error', {
+        message: 'Failed to share PDF. Please try again.',
+        error: error.message
+      })
+    }
+  })
+  
   // Handle hand raise
   socket.on('hand-raise', async (data) => {
     try {

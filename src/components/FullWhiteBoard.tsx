@@ -8,6 +8,8 @@ import { useWhiteboard } from '../contexts/WhiteboardContext'
 import { CompressedDrawingData } from '../utils/compression'
 import RealtimeChat from './RealtimeChat'
 import AIDoubtSolver from './AIDoubtSolver'
+import SimpleAudioClient from './SimpleAudioClient'
+import PDFViewer from './PDFViewer'
 import { 
   PenTool, 
   Square, 
@@ -37,6 +39,8 @@ import {
   Users,
   Volume2,
   VolumeX,
+  Mic,
+  MicOff,
   Maximize2,
   ChevronLeft,
   ChevronRight,
@@ -170,15 +174,7 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
   } = useWhiteboard()
 
   // DEBUG: Log socket and connection status
-  console.log('🔌 FullWhiteBoard socket status:', {
-    socketExists: !!socket,
-    isConnected,
-    roomId,
-    userId,
-    userName,
-    isTeacher
-  });
-
+ 
   // Canvas and drawing refs
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const roughCanvasRef = useRef<any>(null)
@@ -232,6 +228,11 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
   const [paperTexture, setPaperTexture] = useState<boolean>(true)
   const [paperType, setPaperType] = useState<'notebook' | 'graph' | 'plain' | 'legal'>('notebook')
   const [panOffset, setPanOffset] = useState({x: 0, y: 0})
+  
+  // PDF Viewer states
+  const [showPDFViewer, setShowPDFViewer] = useState(false)
+  const [currentPDFUrl, setCurrentPDFUrl] = useState<string | null>(null)
+  const [currentPDFName, setCurrentPDFName] = useState<string | null>(null)
   const [zoom, setZoom] = useState(1)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -271,6 +272,15 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
   // Timer state
   const [classStartTime] = useState(Date.now())
   const [elapsedTime, setElapsedTime] = useState(0)
+  
+  // Legacy audio state - now using SimpleAudioClient which manages its own state
+  // const [audioState, setAudioState] = useState({
+  //   isConnected: false,
+  //   isProducing: false,
+  //   isMuted: false,
+  //   isConnecting: false,
+  //   state: 'disconnected'
+  // })
 
   const toggleHandRaise = useCallback(() => {
     if (!socket || isTeacher) return
@@ -691,6 +701,20 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
     socket.on('paperStyleChanged', handlePaperStyleChanged)
     socket.on('canvasDimensionsChanged', handleCanvasDimensionsChanged)
     
+    // PDF sharing event handlers
+    const handlePDFReceived = (data: { fileName: string, fileData: string, timestamp: string }) => {
+      console.log('PDF received from teacher:', data.fileName)
+      setCurrentPDFUrl(data.fileData)
+      setCurrentPDFName(data.fileName)
+      setShowPDFViewer(true)
+      toast.success(`PDF received: ${data.fileName}`)
+    }
+    
+    // Students listen for PDF shares
+    if (!isTeacher) {
+      socket.on('student-receive-pdf', handlePDFReceived)
+    }
+    
     // Teacher broadcasts initial paper settings when joining or settings change
     if (isTeacher) {
       const broadcastCurrentSettings = () => {
@@ -827,6 +851,13 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
     socket.on('canvasAspectChanged', handler)
     return () => { socket.off('canvasAspectChanged', handler) }
   }, [socket, isTeacher, roomId])
+
+  // PDF handling functions
+  const handlePDFUpload = (pdfData: string, fileName: string) => {
+    setCurrentPDFUrl(pdfData)
+    setCurrentPDFName(fileName)
+    console.log('PDF uploaded by teacher:', fileName)
+  }
 
   // Image handling functions
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -2428,6 +2459,29 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
               <span className="hidden sm:inline text-sm font-medium">AI Help</span>
             </button>
             
+            {/* Simple Audio Client - Working Implementation */}
+            <SimpleAudioClient 
+              roomId={roomId as string}
+              isTeacher={isTeacher}
+            />
+            
+            {/* PDF Viewer Button */}
+            <button
+              onClick={() => setShowPDFViewer(!showPDFViewer)}
+              className="bg-white/10 hover:bg-white/20 text-white px-2.5 sm:px-3 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 sm:space-x-2 backdrop-blur-md border border-white/20 shadow-lg hover:shadow-xl"
+              title={isTeacher ? "Open PDF Viewer & Upload Documents" : "Open PDF Viewer"}
+            >
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline text-sm font-medium">
+                {isTeacher ? 'PDF' : 'Documents'}
+              </span>
+              {currentPDFName && (
+                <span className="bg-green-400 text-green-900 text-xs px-2 py-1 rounded-full font-bold shadow-lg">
+                  ✓
+                </span>
+              )}
+            </button>
+            
             {/* Compression Stats Button for All Users */}
             <button
               onClick={() => setShowCompressionStats(!showCompressionStats)}
@@ -3463,6 +3517,8 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
         </div>
       )}
       
+      {/* Note: Now using SimpleAudioClient in header - no hidden components needed */}
+      
       {/* Compression Stats Modal */}
       {showCompressionStats && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -3608,6 +3664,17 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
           </div>
         </div>
       )}
+      
+      {/* PDF Viewer Sidebar */}
+      <PDFViewer
+        isOpen={showPDFViewer}
+        onClose={() => setShowPDFViewer(false)}
+        isTeacher={isTeacher}
+        roomId={roomId as string}
+        socket={socket}
+        pdfUrl={currentPDFUrl}
+        onPdfUpload={handlePDFUpload}
+      />
     </div>
   )
 }

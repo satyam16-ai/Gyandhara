@@ -352,7 +352,7 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
             return prev
           }
           
-          console.log('✅ Adding new drawing element (legacy):', data.element.type, data.element.id)
+          console.log('✅ Adding new drawing element (legacy backup):', data.element.type, data.element.id)
           return [...prev, data.element]
         })
       } else if (data.action === 'erase' && data.elementId) {
@@ -392,7 +392,13 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
     })
 
     newSocket.on('drawing-elements-update', (data) => {
-      console.log('🎨 Drawing elements bulk update received:', data.action)
+      // Skip legacy drawing events for students - they use compressed data only
+      if (!isTeacherParam) {
+        console.log('🚫 Skipping legacy bulk drawing event for student (using compressed data only)')
+        return
+      }
+      
+      console.log('🎨 Drawing elements bulk update received (teacher only):', data.action)
       
       if (data.action === 'clear') {
         console.log('🧹 Clearing all drawing elements')
@@ -539,6 +545,8 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
             return [...prev, currentDrawingElement]
           })
           setCurrentDrawingElement(null)
+        } else {
+          console.warn('⚠️ draw_end received but no currentDrawingElement - this should not happen in real-time mode')
         }
         break
         
@@ -672,31 +680,44 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
   }
 
   const sendCompressedDrawing = useCallback((data: CompressedDrawingData) => {
-    if (isTeacher && isConnected) {
-      // IMMEDIATE send for real-time responsiveness - no batching for move events
-      if (data.action === 'draw_move') {
+    if (isTeacher && isConnected && socket) {
+      // IMMEDIATE send for all critical drawing actions
+      if (['draw_start', 'draw_move', 'draw_end', 'erase', 'clear'].includes(data.action)) {
         const compressed = compressDrawingData(data)
         const originalSize = JSON.stringify(data).length
         
-        socket!.emit('compressed-drawing-data', compressed.buffer)
+        socket.emit('compressed-drawing-data', compressed.buffer)
         
         // Update stats
         setCompressionStats(prev => ({
           originalSize: prev.originalSize + originalSize,
           compressedSize: prev.compressedSize + compressed.length,
-          compressionRatio: (prev.originalSize + originalSize) / (prev.compressedSize + compressed.length),
+          compressionRatio: prev.compressedSize > 0 ? 
+            (prev.originalSize + originalSize) / (prev.compressedSize + compressed.length) : 0,
           packetsPerSecond: prev.packetsPerSecond + 1
         }))
         
-        console.log(`⚡ Real-time: ${originalSize}B → ${compressed.length}B (${Math.round(originalSize/compressed.length)}:1)`)
+        console.log(`⚡ IMMEDIATE ${data.action}: ${originalSize}B → ${compressed.length}B (${Math.round(originalSize/compressed.length)}:1)`)
+        
+        // For draw_end, also send legacy event as backup for immediate rendering
+        if (data.action === 'draw_end' && currentDrawingElement) {
+          socket.emit('drawing-element', {
+            action: 'add',
+            element: currentDrawingElement,
+            teacherId: currentUserId,
+            timestamp: Date.now()
+          })
+          console.log('📤 Backup legacy draw_end sent for immediate rendering')
+        }
+        
         return
       }
       
-      // Add to buffer for other actions
+      // Add to buffer for other actions (if any)
       compressionBufferRef.current.push(data)
       packetCountRef.current++
       
-      // Immediate flush for critical actions
+      // Immediate flush for critical actions (redundant safety)
       if (['draw_start', 'draw_end', 'erase', 'clear'].includes(data.action)) {
         flushCompressionBuffer()
       }
@@ -705,8 +726,14 @@ export const WhiteboardProvider: React.FC<WhiteboardProviderProps> = ({ children
       if (compressionBufferRef.current.length >= 5) {
         flushCompressionBuffer()
       }
+    } else {
+      console.warn('❌ Cannot send compressed drawing - not connected or not teacher:', {
+        isTeacher,
+        isConnected,
+        hasSocket: !!socket
+      })
     }
-  }, [isTeacher, isConnected, socket, flushCompressionBuffer])
+  }, [isTeacher, isConnected, socket, flushCompressionBuffer, currentDrawingElement, currentUserId])
 
   const clearElements = () => {
     // Clear locally for teacher immediately
