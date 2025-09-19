@@ -9,6 +9,7 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
   const [isProducing, setIsProducing] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [error, setError] = useState(null);
+  const [audioReceiving, setAudioReceiving] = useState(false);
   
   // Refs for WebRTC objects
   const socketRef = useRef(null);
@@ -423,17 +424,69 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
       
       // Get remote stream and ensure audio plays
       const remoteStream = new MediaStream([consumerRef.current.track]);
+      
       if (remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = remoteStream;
         remoteAudioRef.current.volume = 1.0;
         remoteAudioRef.current.muted = false;
-        // Try to play the audio
-        try {
-          await remoteAudioRef.current.play();
+        
+        // Add event listeners for debugging
+        remoteAudioRef.current.onloadedmetadata = () => {
+          log('Remote audio metadata loaded');
+        };
+        
+        remoteAudioRef.current.oncanplay = () => {
+          log('Remote audio can play');
+        };
+        
+        remoteAudioRef.current.onplay = () => {
           log('Remote audio started playing');
-        } catch (playError) {
-          log(`Audio play failed (user interaction may be required): ${playError.message}`);
+          setAudioReceiving(true);
+        };
+        
+        remoteAudioRef.current.onpause = () => {
+          log('Remote audio paused');
+          setAudioReceiving(false);
+        };
+        
+        remoteAudioRef.current.onerror = (e) => {
+          log(`Remote audio error: ${e.target.error?.message || 'Unknown error'}`, 'error');
+        };
+        
+        // Try to play the audio with user interaction fallback
+        try {
+          const playPromise = remoteAudioRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              log('Remote audio playing successfully');
+            }).catch(playError => {
+              log(`Audio play failed (user interaction required): ${playError.message}`);
+              
+              // Add click handler to enable audio
+              const enableAudio = async () => {
+                try {
+                  await remoteAudioRef.current.play();
+                  log('Audio enabled after user interaction');
+                  document.removeEventListener('click', enableAudio);
+                  document.removeEventListener('touchstart', enableAudio);
+                } catch (retryError) {
+                  log(`Still failed to play after interaction: ${retryError.message}`, 'error');
+                }
+              };
+              
+              document.addEventListener('click', enableAudio, { once: true });
+              document.addEventListener('touchstart', enableAudio, { once: true });
+              
+              // Show message to user
+              setError('Click anywhere to enable audio');
+              setTimeout(() => setError(null), 5000);
+            });
+          }
+        } catch (immediateError) {
+          log(`Immediate audio play error: ${immediateError.message}`, 'error');
         }
+      } else {
+        log('No audio element found!', 'error');
       }
       
       // Resume consumer
@@ -599,22 +652,34 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
               <VolumeX className="w-4 h-4" />
             )}
             <span className="hidden sm:inline text-sm">
-              {isConnected ? 'Listening' : 'Join'}
+              {isConnected ? (audioReceiving ? 'Receiving Audio' : 'Connected') : 'Join'}
             </span>
             {isConnected && (
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+              <div className={`w-2 h-2 rounded-full ${audioReceiving ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`} />
             )}
           </button>
         </>
       )}
       
-      {/* Hidden audio element for receiving teacher's audio */}
+      {/* Audio element for receiving teacher's audio */}
       {role === 'student' && (
         <audio 
           ref={remoteAudioRef} 
           autoPlay 
           playsInline
-          style={{ display: 'none' }}
+          controls={false}
+          volume={1.0}
+          muted={false}
+          style={{ 
+            position: 'fixed',
+            bottom: '10px',
+            right: '10px',
+            width: '200px',
+            height: '40px',
+            zIndex: 1000,
+            opacity: isConnected ? 1 : 0,
+            pointerEvents: isConnected ? 'auto' : 'none'
+          }}
         />
       )}
     </div>
