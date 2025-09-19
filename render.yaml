@@ -1,37 +1,77 @@
 services:
   - type: web
-    name: gyandhara-backend
+    name: gyandhara-audio-sfu
     env: node
-    plan: free
-    repo: https://github.com/satyam16-ai/voiceboard-educational-platform.git
-    branch: main
-    autoDeploy: true
-    rootDir: server
-    buildCommand: npm install --production
-    startCommand: node index.js
+    plan: starter
+    region: oregon
+    buildCommand: npm install --verbose
+    startCommand: npm start
     healthCheckPath: /health
     envVars:
+      # Core Node.js Configuration
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
-      - key: MONGODB_URI
-        value: mongodb+srv://satyam_ai:satyamtiwari01@gyandhara.ordgmuf.mongodb.net/gyaandhara?retryWrites=true&w=majority&appName=GYANDHARA
-      - key: FRONTEND_URL
-        value: https://gyandhara-n1arsqflk-nitin8360s-projects.vercel.app
-      - key: JWT_SECRET
-        value: gyandhara-super-secure-jwt-production-key-2025
-      - key: BCRYPT_SALT_ROUNDS
-        value: 12
-      - key: GEMINI_API_KEY
-        value: AIzaSyAnpgC4ow_OJ2aW_jNffF54ZMAkJpBjESI
-      - key: ENABLE_AI_FEATURES
-        value: "true"
-      - key: ENABLE_EMAIL_NOTIFICATIONS
-        value: "true"
-      - key: ENABLE_COMPRESSION
-        value: "true"
-      - key: MAX_PARTICIPANTS_PER_SESSION
-        value: 50
-      - key: RATE_LIMIT_MAX_REQUESTS
-        value: 200
+      - key: NODE_VERSION
+        value: 20.11.0
+      
+      # Build Configuration
+      - key: NPM_CONFIG_PRODUCTION
+        value: false
+      - key: NPM_CONFIG_CACHE
+        value: /tmp/.npm
+      
+      # Application Configuration
+      - key: LOG_LEVEL
+        value: info
+      - key: SERVER_NAME
+        value: gyandhara-audio-sfu
+      
+      # mediasoup Configuration
+      - key: MEDIASOUP_MIN_PORT
+        value: 20000
+      - key: MEDIASOUP_MAX_PORT
+        value: 20100
+      - key: MEDIASOUP_ANNOUNCED_IP
+        value: auto
+      
+      # CORS and Security
+      - key: ALLOWED_ORIGINS
+        value: https://gyandhara-tau.vercel.app,https://gyandhara-app.onrender.com,http://localhost:3000,http://localhost:5173
+      - key: ENABLE_CORS
+        value: true
+      
+      # Health Check Configuration
+      - key: HEALTH_CHECK_ENABLED
+        value: true
+      - key: HEALTH_CHECK_INTERVAL
+        value: 30000
+    autoDeploy: false
+    rootDir: webrtc-audio/server
+    
+    # Scaling configuration
+    numInstances: 1
+    
+    # Build settings - Native Node.js deployment
+    buildFilter:
+      paths:
+        - webrtc-audio/server/**
+        
+    # Health check configuration
+    healthCheck:
+      enabled: true
+      path: /health
+      timeout: 30
+      interval: 30
+      retries: 3
+      
+    # Auto-deploy settings
+    branch: main
+    
+    # Environment-specific configuration
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: info
+      SERVER_TYPE: audio-sfu
+      DEPLOYMENT_PLATFORM: render
