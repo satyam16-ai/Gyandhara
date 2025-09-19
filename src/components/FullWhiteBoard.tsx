@@ -707,7 +707,7 @@ const FullWhiteBoard: React.FC<WhiteBoardProps> = ({
       setCurrentPDFUrl(data.fileData)
       setCurrentPDFName(data.fileName)
       setShowPDFViewer(true)
-      toast.success(`PDF received: ${data.fileName}`)
+      console.log(`PDF received: ${data.fileName}`)
     }
     
     // Students listen for PDF shares
