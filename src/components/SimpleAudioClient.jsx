@@ -141,7 +141,21 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
     socketRef.current.on('teacher-audio-available', async (data) => {
       log(`Teacher audio available: ${data.producerId}`);
       if (role === 'student') {
-        await consumeAudio(data.producerId);
+        // Wait for consumer transport to be ready before consuming
+        const waitForTransport = async () => {
+          let attempts = 0;
+          while (!consumerTransportRef.current && attempts < 10) {
+            log(`Waiting for consumer transport... attempt ${attempts + 1}`);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            attempts++;
+          }
+          if (consumerTransportRef.current) {
+            await consumeAudio(data.producerId);
+          } else {
+            log('Consumer transport failed to initialize after 5 seconds', 'error');
+          }
+        };
+        waitForTransport();
       }
     });
 
@@ -371,13 +385,20 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
     }
   }, []);
 
-  // Consume audio - exact replica
+  // Consume audio - exact replica with better transport handling
   const consumeAudio = useCallback(async (producerId) => {
     try {
       log(`Consuming audio from producer: ${producerId}`);
       
       if (!consumerTransportRef.current) {
-        log('Consumer transport not ready', 'error');
+        log('Consumer transport not ready, creating it first...', 'error');
+        await createConsumerTransport();
+        // Wait a bit for transport to be fully ready
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      if (!consumerTransportRef.current) {
+        log('Failed to create consumer transport', 'error');
         return;
       }
       
@@ -400,10 +421,19 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
         rtpParameters: consumerData.rtpParameters
       });
       
-      // Get remote stream
+      // Get remote stream and ensure audio plays
       const remoteStream = new MediaStream([consumerRef.current.track]);
       if (remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = remoteStream;
+        remoteAudioRef.current.volume = 1.0;
+        remoteAudioRef.current.muted = false;
+        // Try to play the audio
+        try {
+          await remoteAudioRef.current.play();
+          log('Remote audio started playing');
+        } catch (playError) {
+          log(`Audio play failed (user interaction may be required): ${playError.message}`);
+        }
       }
       
       // Resume consumer
@@ -576,6 +606,16 @@ const SimpleAudioClient = ({ roomId, isTeacher }) => {
             )}
           </button>
         </>
+      )}
+      
+      {/* Hidden audio element for receiving teacher's audio */}
+      {role === 'student' && (
+        <audio 
+          ref={remoteAudioRef} 
+          autoPlay 
+          playsInline
+          style={{ display: 'none' }}
+        />
       )}
     </div>
   );
